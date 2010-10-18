@@ -24,47 +24,53 @@
 #include <Elementary.h>
 #include <glib-object.h>
 
-struct _MokoPanel {
+#include "globals.h"
 
-    /* sequence per gli ID delle notifiche */
+/* default category */
+#define DEFAULT_CATEGORY        "unknown"
+#define DEFAULT_ICON            "file://" MOKOPANEL_DATADIR "/unknown.png"
+
+typedef struct {
+
+    /* sequence ID for notifications */
     guint sequence;
 
-    /* finestra del pannello */
+    /* panel window */
     Evas_Object* win;
 
-    /* layout del pannello */
+    /* panel layout */
     Evas_Object* layout;
 
-    /* contenitore pagine */
+    /* page container */
     Evas_Object* pager;
 
-    /* box principale contenuto prima pagina */
+    /* main box for front page content */
     Evas_Object* hbox;
 
     /* filler */
     Evas_Object* fill;
 
-    /* orologio */
+    /* clock */
     Evas_Object* time;
 
-    /* data */
+    /* date */
     Evas_Object* date;
     gboolean date_pushed;
 
-    /* batteria */
+    /* battery */
     Evas_Object* battery;
 
     /* gsm */
     Evas_Object* gsm;
 
-    /* oggetto in primo piano */
+    /* topmost object */
     Evas_Object* topmost;
 
-    /* definizione tipi */
-    GHashTable* types;
+    /* categories (mapping to Eina_List of MokoNotification) */
+    GHashTable* categories;
 
-    /* lista icone di notifica in prima pagina */
-    GPtrArray* list;
+    /* notification icons list in front page */
+    Eina_List* list;
 
     /* coda delle notifiche testuali da visualizzare (array [ id nella lista, testo, icona ]) */
     GQueue* queue;
@@ -72,49 +78,60 @@ struct _MokoPanel {
     /* coda delle notifiche testuali da ripresentare (come queue) */
     GQueue* represent;
 
-    /* callback per uso generico */
-    gpointer callback;
+    /* generic callback */
+    void* callback;
 
-    /* flag se abbiamo gia' struttato */
+    /* TRUE if the panel has already called strut */
     gboolean has_strut;
 
-    /* servizio dbus notifiche */
+    /* D-Bus notification service */
     GObject* service;
-};
 
-typedef struct _MokoPanel MokoPanel;
+} MokoPanel;
 
-struct _MokoNotificationType {
-    char* name;
-    char* icon;
-    char* description1;
-    char* description2;
-    gboolean format_count;
-};
+typedef struct {
 
-typedef struct _MokoNotificationType MokoNotificationType;
+    /* panel stuff */
+    MokoPanel* panel;
+    guint sequence;
 
-struct _MokoNotification {
-    /* roba della finestra delle notifiche */
+    /* notification window stuff */
     Evas_Object* list;
     Elm_Genlist_Item* item;
     Evas_Object* win;
 
-    /* roba del pannello */
-    MokoPanel* panel;
-    guint sequence;
-
+    /* icon object - might be shared across notification of same category */
     Evas_Object* icon;
-    char* text;
-    char* subdescription;
-    MokoNotificationType* type;
-};
 
-typedef struct _MokoNotification MokoNotification;
+    /* notification summary - first line of list item */
+    char* summary;
+    /* notification body - scrolled text in front page and second line of list item */
+    char* body;
 
-#define PANEL_HEIGHT        (MOKOSUITE_SCALE_FACTOR * 28)
-#define PANEL_WIDTH         (MOKOSUITE_SCALE_FACTOR * 240)
-#define ICON_SIZE           (MOKOSUITE_SCALE_FACTOR * 24)
+    char** actions;
+    int timeout;
+
+    /* notification category -- extracted from hints */
+    char* category;
+
+    /* don't push scrolled text -- extracted from hints */
+    gboolean dont_push;
+    /* push on resume -- extracted from hints */
+    gboolean show_on_resume;
+    /* insist with sound -- extracted from hints */
+    gboolean insistent;
+    /* ongoing event -- extracted from hints */
+    gboolean ongoing;
+    /* don't clear on clear all -- extracted from hints */
+    gboolean no_clear;
+    /* delete on click -- extracted from hints */
+    gboolean autodel;
+
+} MokoNotification;
+
+#define PANEL_HEIGHT        (SCALE_FACTOR * 28)
+#define PANEL_WIDTH         (SCALE_FACTOR * 240)
+#define ICON_SIZE           (SCALE_FACTOR * 24)
 
 #define MOKOPANEL_CALLBACK_NOTIFICATION_START       1
 #define MOKOPANEL_CALLBACK_NOTIFICATION_END         2
@@ -129,20 +146,14 @@ void mokopanel_notification_represent(MokoPanel* panel);
 int mokopanel_count_notifications(MokoPanel* panel, const char* type);
 Elm_Genlist_Item* mokopanel_get_list_item(MokoPanel* panel, const char* type);
 
-void mokopanel_notification_remove(MokoPanel* panel, int id);
-int mokopanel_notification_queue(MokoPanel* panel,
-        const char* text,
-        const char* type,
-        const char* subdescription,
-        int flags);
-
-void mokopanel_register_notification_type(MokoPanel* panel,
-        const char* type,
-        const char* icon,
-        const char* description1,
-        const char* description2,
-        gboolean format_count);
+void mokopanel_notification_remove(MokoPanel* panel, guint id);
+guint mokopanel_notification_queue(MokoPanel* panel,
+        const char* app_name, guint id, const char* icon, const char* summary,
+        const char* body, char** actions, int actions_length, GHashTable* hints,
+        int timeout);
 
 MokoPanel* mokopanel_new(const char* name, const char* title);
+
+char** mokopanel_notification_caps(MokoPanel* panel, int* length);
 
 #endif  /* __PANEL_H */

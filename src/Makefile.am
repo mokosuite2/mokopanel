@@ -1,11 +1,12 @@
 VALAC_ARGS = \
 	--vapidir=$(top_srcdir)/vapi \
-	--pkg gio-2.0 \
+	--pkg dbus-glib-1 \
 	--pkg panel \
+	--pkg config \
 	--save-temps \
 	--basedir $(top_srcdir)/src
 
-INCLUDES = $(GLIB_CFLAGS) $(DBUS_CFLAGS) $(ELEMENTARY_CFLAGS) $(FSO_CFLAGS) $(MOKOSUITE_CFLAGS) \
+INCLUDES = $(GLIB_CFLAGS) $(DBUS_CFLAGS) $(ELEMENTARY_CFLAGS) $(EFREET_CFLAGS) $(FSO_CFLAGS) $(MOKOSUITE_CFLAGS) \
 	-DLOCALEDIR=\""$(localedir)"\" -DDATADIR=\""$(datadir)"\" -DSYSCONFDIR=\""$(sysconfdir)"\" -Wall
 
 bin_PROGRAMS = mokopanel
@@ -40,7 +41,7 @@ mokopanel_SOURCES = $(dbus_sources) \
 	shutdown.h
 
 mokopanel_LDADD = \
-	$(FSO_LIBS) $(ELEMENTARY_LIBS) $(DBUS_LIBS) $(GLIB_LIBS) $(MOKOSUITE_LIBS)
+	$(FSO_LIBS) $(ELEMENTARY_LIBS) $(EFREET_LIBS) $(DBUS_LIBS) $(GLIB_LIBS) $(MOKOSUITE_LIBS)
 
 EXTRA_DIST = \
 	$(BUILT_SOURCES) \
