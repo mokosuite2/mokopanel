@@ -20,6 +20,7 @@
 
 #include <stdlib.h>
 #include <mokosuite/utils/utils.h>
+#include <mokosuite/ui/gui.h>
 #include <mokosuite/utils/settingsdb.h>
 #include <freesmartphone-glib/freesmartphone-glib.h>
 #include <dbus/dbus-glib-bindings.h>
@@ -66,11 +67,20 @@ int main(int argc, char* argv[])
 
     /* other things */
     mokosuite_utils_init();
+    mokosuite_ui_init();
+
+    /* GLib mainloop integration */
+    if (!ecore_main_loop_glib_integrate())
+        g_error("Ecore/GLib integration failed!");
 
     freesmartphone_glib_init();
 
     EINA_LOG_DBG("Loading data from %s", MOKOPANEL_DATADIR);
     elm_theme_extension_add(NULL, MOKOPANEL_DATADIR "/theme.edj");
+
+    elm_theme_overlay_add(NULL, "elm/pager/base/panel");
+    elm_theme_overlay_add(NULL, "elm/label/base/panel");
+    elm_theme_overlay_add(NULL, "elm/bg/base/panel");
 
     GError *e = NULL;
     DBusGProxy *driver_proxy;
@@ -103,10 +113,6 @@ int main(int argc, char* argv[])
         MOKOPANEL_SYSCONFDIR "/" PACKAGE ".db");
 
     freesmartphone_glib_init();
-
-    elm_theme_overlay_add(NULL, "elm/pager/base/panel");
-    elm_theme_overlay_add(NULL, "elm/label/base/panel");
-    elm_theme_overlay_add(NULL, "elm/bg/base/panel");
 
     main_panel = mokopanel_new("mokopanel", "Panel");
 

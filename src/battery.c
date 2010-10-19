@@ -20,7 +20,6 @@
 
 #include <Elementary.h>
 #include <glib.h>
-#include <libmokosuite/mokosuite.h>
 #include <freesmartphone-glib/odeviced/powersupply.h>
 
 #include "panel.h"
@@ -67,9 +66,9 @@ static void get_capacity_callback(GError *error, int energy, gpointer data)
     }
 
     if (perc < 0)
-        ic = g_strdup(MOKOSUITE_DATADIR "battery-unknown.png");
+        ic = g_strdup(MOKOPANEL_DATADIR "/battery-unknown.png");
     else
-        ic = g_strdup_printf(MOKOSUITE_DATADIR "%s-%d.png", (battery_charging) ? "charging" : "battery", perc);
+        ic = g_strdup_printf(MOKOPANEL_DATADIR "/%s-%d.png", (battery_charging) ? "charging" : "battery", perc);
 
     elm_icon_file_set(bat, ic, NULL);
     elm_icon_no_scale_set(bat, TRUE);
@@ -159,7 +158,7 @@ Evas_Object* battery_applet_new(MokoPanel* panel)
 
     Evas_Object* bat = elm_icon_add(panel->win);
 
-    elm_icon_file_set(bat, MOKOSUITE_DATADIR "battery-unknown.png", NULL);
+    elm_icon_file_set(bat, MOKOPANEL_DATADIR "/battery-unknown.png", NULL);
     elm_icon_no_scale_set(bat, TRUE);
     #ifdef QVGA
     elm_icon_scale_set(bat, FALSE, TRUE);

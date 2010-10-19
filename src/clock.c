@@ -20,7 +20,7 @@
 
 #include <Elementary.h>
 #include <glib.h>
-#include <libmokosuite/misc.h>
+#include <mokosuite/utils/misc.h>
 
 #include "panel.h"
 #include "clock.h"

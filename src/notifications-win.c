@@ -75,7 +75,7 @@ static void _list_selected(void *data, Evas_Object *obj, void *event_info)
 
     elm_genlist_item_selected_set((Elm_Genlist_Item*)event_info, FALSE);
 
-    notify_internal_exec(n);
+    // TODO notify_internal_exec(n);
 
     notify_window_hide();
 }
@@ -83,19 +83,25 @@ static void _list_selected(void *data, Evas_Object *obj, void *event_info)
 static char* notification_genlist_label_get(void *data, Evas_Object * obj, const char *part)
 {
     MokoNotification* n = (MokoNotification*) data;
-    int c = mokopanel_count_notifications(n->panel, n->type->name);
+    int c = mokopanel_count_notifications(n->panel, n->category);
 
     if (!strcmp(part, "elm.text")) {
 
+        /*
         char* fmt = (c == 1) ? n->type->description1 : n->type->description2;
         if (n->type->format_count)
             return g_strdup_printf(fmt, c);
         else
             return g_strdup(fmt);
+        */
+        return g_strdup("TODO");
 
-    } else if (!strcmp(part, "elm.text.sub")) {
+    }
 
-        return (c == 1) ? g_strdup(n->subdescription) : NULL;
+    else if (!strcmp(part, "elm.text.sub")) {
+
+        //return (c == 1) ? g_strdup(n->subdescription) : NULL;
+        return g_strdup("TODO");
     }
 
     return NULL;
@@ -108,7 +114,7 @@ static Evas_Object* notification_genlist_icon_get(void *data, Evas_Object * obj,
     if (!strcmp(part, "elm.swallow.icon")) {
         // icona notifica
         Evas_Object *icon = elm_icon_add(n->win);
-        elm_icon_file_set(icon, n->type->icon, NULL);
+        elm_icon_file_set(icon, n->icon_path, NULL);
         //evas_object_size_hint_min_set(icon, 100, 100);
         // TODO icona dimensionata correttamente? :S
         //elm_icon_smooth_set(icon, TRUE);
@@ -132,7 +138,7 @@ void notification_window_add(MokoNotification* n)
     n->list = notification_list;
     n->win = notification_win;
 
-    Elm_Genlist_Item* item = mokopanel_get_list_item(n->panel, n->type->name);
+    Elm_Genlist_Item* item = mokopanel_get_list_item(n->panel, n->category);
     if (item) {
         n->item = item;
         elm_genlist_item_update(n->item);

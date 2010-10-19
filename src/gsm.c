@@ -20,8 +20,7 @@
 
 #include <Elementary.h>
 #include <glib.h>
-#include <libmokosuite/mokosuite.h>
-#include <libmokosuite/misc.h>
+#include <mokosuite/utils/misc.h>
 #include <freesmartphone-glib/odeviced/powersupply.h>
 #include <freesmartphone-glib/ousaged/usage.h>
 #include <freesmartphone-glib/ogsmd/network.h>
@@ -324,11 +323,11 @@ void gsm_applet_set_icon(Evas_Object* gsm, GsmIcon icon)
 
     switch (icon) {
         case GSM_ICON_DISABLED:
-            ic = g_strdup(MOKOSUITE_DATADIR "gsm-null.png");
+            ic = g_strdup(MOKOPANEL_DATADIR "/gsm-null.png");
             break;
 
         case GSM_ICON_OFFLINE:
-            ic = g_strdup(MOKOSUITE_DATADIR "gsm-offline.png");
+            ic = g_strdup(MOKOPANEL_DATADIR "/gsm-offline.png");
             break;
 
         case GSM_ICON_ONLINE: //[*ti amuzzoooooooo troppoooooooooooooooooooooooooooo!!!:)!!!Bacino!!!:)!*]
@@ -345,7 +344,7 @@ void gsm_applet_set_icon(Evas_Object* gsm, GsmIcon icon)
             else if (signal_strength > 80)
                 perc = 4;
 
-            ic = g_strdup_printf(MOKOSUITE_DATADIR "gsm-%d.png", perc);
+            ic = g_strdup_printf(MOKOPANEL_DATADIR "/gsm-%d.png", perc);
 
             break;
 
@@ -371,7 +370,7 @@ Evas_Object* gsm_applet_new(MokoPanel* panel)
 {
     Evas_Object* gsm = elm_icon_add(panel->win);
 
-    elm_icon_file_set(gsm, MOKOSUITE_DATADIR "gsm-null.png", NULL);
+    elm_icon_file_set(gsm, MOKOPANEL_DATADIR "/gsm-null.png", NULL);
     elm_icon_no_scale_set(gsm, TRUE);
     #ifdef QVGA
     elm_icon_scale_set(gsm, FALSE, TRUE);

@@ -28,7 +28,7 @@
 
 /* default category */
 #define DEFAULT_CATEGORY        "unknown"
-#define DEFAULT_ICON            "file://" MOKOPANEL_DATADIR "/unknown.png"
+#define DEFAULT_ICON            MOKOPANEL_DATADIR "/unknown.png"
 
 typedef struct {
 
@@ -102,6 +102,8 @@ typedef struct {
 
     /* icon object - might be shared across notification of same category */
     Evas_Object* icon;
+    /* icon path */
+    char* icon_path;
 
     /* notification summary - first line of list item */
     char* summary;

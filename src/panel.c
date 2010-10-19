@@ -37,11 +37,42 @@ static void process_notification_queue(gpointer data);
 
 static char* get_real_icon(const char* name)
 {
+    if (!name) return NULL;
+
+    EINA_LOG_DBG("Retrieving icon \"%s\"", name);
     if (g_str_has_prefix(name, "file://")) {
         return g_strdup(name + strlen("file://"));
     }
 
     return efreet_icon_path_find(NULL, name, ICON_SIZE);
+}
+
+static char* strip_body(const char* body)
+{
+    // ehm :)
+    if (!body) return g_strdup("");
+
+    char* copy = g_malloc0(strlen(body));
+    char* _copy = copy;
+    bool inside_tag = FALSE;
+
+    for (; *body != '\0'; body++) {
+        //EINA_LOG_DBG("Char = '%c', inside_tag = %s", *body, inside_tag ? "TRUE" : "FALSE");
+        if (inside_tag && *body == '>') {
+            inside_tag = FALSE;
+            continue;
+        }
+        if (*body == '<')
+            inside_tag = TRUE;
+
+        if (!inside_tag) {
+            *copy = *body;
+            copy++;
+        }
+    }
+
+    EINA_LOG_DBG("Stripped body: \"%s\"", _copy);
+    return _copy;
 }
 
 static void _panel_mouse_down(void *data, Evas *e, Evas_Object *obj, void *event_info)
@@ -54,39 +85,38 @@ static void _panel_mouse_up(void *data, Evas *e, Evas_Object *obj, void *event_i
     notify_window_end();
 }
 
-static void free_notification(gpointer data)
+static void free_notification(MokoNotification* no)
 {
-    MokoNotification *data2 = data;
-
     // cancella icona solo se tutte le notifiche di quel tipo sono andate
-    MokoPanel* panel = data2->panel;
+    MokoPanel* panel = no->panel;
     gboolean update_only = TRUE;
 
     Eina_List* iter;
-    void* _data;
-    MokoNotification* no;
+    void* data;
+    MokoNotification* cur;
     EINA_LIST_FOREACH(panel->list, iter, data) {
-        no = _data;
-        if (data2 != no && !strcmp(data2->category, no->category)) goto no_icon;
+        cur = data;
+        if (no != cur && !strcmp(no->category, cur->category)) goto no_icon;
     }
 
     // tutte le notifiche di quel tipo sono andate, cancella icona
-    g_debug("Deleting notification icon %p for type '%s'", data2->icon, data2->type->name);
-    evas_object_del(data2->icon);
+    g_debug("Deleting notification icon %p for category '%s'", no->icon, no->category);
+    evas_object_del(no->icon);
 
     // cancella notifica in lista :)
     update_only = FALSE;
 
 no_icon:
     // rimuovi dalla finestra delle notifiche
-    notification_window_remove(data2, update_only);
+    notification_window_remove(no, update_only);
 
-    g_debug("Freeing notification %d", data2->sequence);
-    g_free(data2->summary);
-    g_free(data2->body);
+    g_debug("Freeing notification %d", no->sequence);
+    g_free(no->summary);
+    g_free(no->body);
+    g_free(no->category);
+    g_strfreev(no->actions);
 
-    #error free other things
-    g_free(data);
+    g_free(no);
 }
 
 static gboolean do_pop_text_notification(gpointer data)
@@ -279,7 +309,7 @@ int mokopanel_count_notifications(MokoPanel* panel, const char* category)
     Eina_List* iter;
     void* _data;
     MokoNotification* data;
-    EINA_LIST_FOREACH(panel->list, iter, data) {
+    EINA_LIST_FOREACH(panel->list, iter, _data) {
         data = _data;
         if (!strcmp(data->category, category))
             count++;
@@ -299,7 +329,7 @@ Elm_Genlist_Item* mokopanel_get_list_item(MokoPanel* panel, const char* category
     Eina_List* iter;
     void* _data;
     MokoNotification* data;
-    EINA_LIST_FOREACH(panel->list, iter, data) {
+    EINA_LIST_FOREACH(panel->list, iter, _data) {
         data = _data;
         if (!strcmp(data->category, category) && data->item)
             return data->item;
@@ -323,21 +353,28 @@ void mokopanel_notification_represent(MokoPanel* panel)
 }
 
 /**
+ * TODO
+ */
+char** mokopanel_notification_caps(MokoPanel* panel, int* length)
+{
+    if (length) *length = 0;
+    return NULL;
+}
+
+/**
  * Rimuove una notifica (rimuove l'icona dalla prima pagina)
  */
 void mokopanel_notification_remove(MokoPanel* panel, guint id)
 {
     g_return_if_fail(panel != NULL);
 
-    // trova l'id (sigh)
     MokoNotification* data = NULL;
-    int i;
+    Eina_List* iter;
+    void* _data;
 
-    for (i = 0; i < panel->list->len; i++) {
-
-        MokoNotification* data2 = g_ptr_array_index(panel->list, i);
+    EINA_LIST_FOREACH(panel->list, iter, _data) {
+        MokoNotification* data2 = _data;
         if (data2) {
-            //g_debug("Current index: %d, id = %d (searching: %d)", i, data2->sequence, id);
             if (data2->sequence == id) {
                 data = data2;
                 break;
@@ -347,23 +384,23 @@ void mokopanel_notification_remove(MokoPanel* panel, guint id)
 
     if (data != NULL) {
         // rimozione dai represent
-        GList* iter = panel->represent->head;
-        while (iter) {
-            gpointer* data = iter->data;
+        GList* giter = panel->represent->head;
+        while (giter) {
+            gpointer* data = giter->data;
             if (GPOINTER_TO_INT(data[2]) == id) {
                 g_free(data[0]);
                 g_free(data[1]);
                 g_free(data);
 
-                g_queue_delete_link(panel->represent, iter);
+                g_queue_delete_link(panel->represent, giter);
                 break;
             }
-            iter = iter->next;
+            giter = giter->next;
         }
 
-        // rimozione rapida -- cancellazione effettuata dall'array
-        #error g_ptr_array_remove_index & free
-        g_ptr_array_remove_index(panel->list, i);
+        // rimozione dalla lista e liberazione
+        free_notification(data);
+        panel->list = eina_list_remove_list(panel->list, iter);
     }
 }
 
@@ -390,6 +427,7 @@ guint mokopanel_notification_queue(MokoPanel* panel,
 
     Eina_List *iter;
     void* _data;
+    char* icon_path = NULL;
 
     // get category
     const char* catg = map_get_string(hints, "category");
@@ -401,22 +439,24 @@ guint mokopanel_notification_queue(MokoPanel* panel,
     // get icon
     if (!icon) {
         // TODO support for icon_data hint
-        icon = g_strdup(DEFAULT_ICON);
+        icon_path = g_strdup(DEFAULT_ICON);
     }
 
     else {
         // retrieve real icon path
-        icon = get_real_icon(icon);
+        icon_path = get_real_icon(icon_path);
     }
 
-    if (!icon)
-        icon = g_strdup(DEFAULT_ICON);
+    if (!icon_path)
+        icon_path = g_strdup(DEFAULT_ICON);
+
+    EINA_LOG_DBG("Icon path: \"%s\"", icon_path);
 
     catg_list = g_hash_table_lookup(panel->categories, catg);
 
     // intanto appendi l'icona in prima pagina se non e' gia' presente
     // della stessa categoria
-    EINA_LIST_FOREACH(panel->list, iter, data) {
+    EINA_LIST_FOREACH(panel->list, iter, _data) {
         data = _data;
         if (!strcmp(data->category, catg)) {
             ic = data->icon;
@@ -425,7 +465,7 @@ guint mokopanel_notification_queue(MokoPanel* panel,
     }
 
     ic = elm_icon_add(panel->win);
-    elm_icon_file_set(ic, icon, NULL);
+    elm_icon_file_set(ic, icon_path, NULL);
     elm_icon_no_scale_set(ic, TRUE);
     #ifdef QVGA
     elm_icon_scale_set(ic, FALSE, TRUE);
@@ -438,27 +478,35 @@ guint mokopanel_notification_queue(MokoPanel* panel,
     elm_box_pack_before(panel->hbox, ic, panel->fill);
 
 no_icon:
-    seq = panel->sequence;
-    if ((seq + 1) >  G_MAXUINT) panel->sequence = 1;
-    else panel->sequence++;
+    if (!id) {
+        if ((panel->sequence + 1) >= G_MAXUINT) panel->sequence = 1;
+        else panel->sequence++;
+
+        seq = panel->sequence;
+    }
+    else {
+        seq = id;
+    }
 
     data = g_new0(MokoNotification, 1);
     data->panel = panel;
     data->sequence = seq;
     data->icon = ic;
+    data->icon_path = icon_path;
     data->summary = g_strdup(summary);
-    data->body = g_strdup(body);
+    data->body = strip_body(body);
     data->category = g_strdup(catg);
 
     // flags
-    data->dont_push = map_get_bool(hints, "x-mokosuite-dont-push", TRUE);
-    data->show_on_resume = map_get_bool(hints, "x-mokosuite-show-on-resume", TRUE);
-    data->insistent = map_get_bool(hints, "x-mokosuite-insistent", TRUE);
-    data->ongoing = map_get_bool(hints, "x-mokosuite-ongoing", TRUE);
-    data->no_clear = map_get_bool(hints, "x-mokosuite-noclear", TRUE);
-    data->autodel = map_get_bool(hints, "x-mokosuite-autodel", TRUE);
+    data->dont_push = map_get_bool(hints, "x-mokosuite.flags.dont-push", TRUE);
+    data->show_on_resume = map_get_bool(hints, "x-mokosuite.flags.show-on-resume", TRUE);
+    data->insistent = map_get_bool(hints, "x-mokosuite.flags.insistent", TRUE);
+    data->ongoing = map_get_bool(hints, "x-mokosuite.flags.ongoing", TRUE);
+    data->no_clear = map_get_bool(hints, "x-mokosuite.flags.noclear", TRUE);
+    data->autodel = map_get_bool(hints, "x-mokosuite.flags.autodel", TRUE);
 
-    panel->list = eina_list_append(panel->list, data);
+    if (id)
+        panel->list = eina_list_append(panel->list, data);
 
     // aggiungi alla finestra delle notifiche
     notification_window_add(data);
@@ -466,11 +514,15 @@ no_icon:
     if (body != NULL) {
         // pusha se richiesto
         if (!data->dont_push)
-            push_text_notification(panel, body, icon);
+            push_text_notification(panel, data->body, icon_path);
 
         // ripresenta notifica
-        if (data->show_on_resume)
-            push_represent(panel, seq, body, icon);
+        if (data->show_on_resume) {
+            if (!id)
+                push_represent(panel, seq, data->body, icon_path);
+            else if (data->dont_push)
+                push_text_notification(panel, data->body, icon_path);
+        }
     }
 
     return seq;
@@ -517,7 +569,7 @@ MokoPanel* mokopanel_new(const char* name, const char* title)
 
     // main layout
     panel->layout = elm_layout_add(panel->win);
-    elm_layout_file_set(panel->layout, MOKOPANEL_DATADIR "theme.edj", "panel");
+    elm_layout_file_set(panel->layout, MOKOPANEL_DATADIR "/theme.edj", "panel");
 
     evas_object_size_hint_weight_set (panel->layout, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
     elm_win_resize_object_add (panel->win, panel->layout);

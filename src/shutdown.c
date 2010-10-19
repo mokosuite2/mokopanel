@@ -20,19 +20,20 @@
 
 #include <Elementary.h>
 #include <glib.h>
-#include <libmokosuite/mokosuite.h>
-#include <libmokosuite/settings.h>
+#include <mokosuite/utils/settings.h>
+#include <mokosuite/utils/utils.h>
 #include <freesmartphone-glib/ousaged/usage.h>
 
+#include "globals.h"
 #include "shutdown.h"
 
 #include <glib/gi18n-lib.h>
 
 #define WIN_WIDTH       400
 
-#define MOKO_PHONE_NAME                 MOKOSUITE_SERVICE ".phone"
-#define MOKO_PHONE_INTERFACE            MOKOSUITE_SERVICE ".Phone"
-#define MOKO_PHONE_PATH                 MOKOSUITE_PATH "/Phone"
+#define MOKO_PHONE_NAME                 "org.mokosuite.phone"
+#define MOKO_PHONE_INTERFACE            "org.mokosuite.Phone"
+#define MOKO_PHONE_PATH                 MOKOSUITE_DBUS_PATH "/Phone"
 #define MOKO_PHONE_SETTINGS_PATH        MOKO_PHONE_PATH "/Settings"
 
 static Evas_Object* win = NULL;
@@ -45,7 +46,7 @@ static void _offline_mode(void* data, Evas_Object* obj, void* event_info)
     shutdown_window_hide();
 
     // imposta variabile offline_mode!!!
-    moko_settings_set_setting(phone_settings, "offline_mode", moko_settings_from_boolean(!offline_mode), NULL);
+    settings_set(phone_settings, "offline_mode", settings_from_boolean(!offline_mode), NULL);
     // lascia il resto in balia dell'oscurita'... lol
 }
 
@@ -157,11 +158,11 @@ static void _shutdown_close(void* data, Evas_Object* obj, void* event_info)
 static void update_buttons(void)
 {
     // TODO aggiorna pulsante
-    char* value = moko_settings_get_setting(phone_settings, "offline_mode", NULL, NULL);
+    char* value = settings_get(phone_settings, "offline_mode", NULL, NULL);
     if (value == NULL) {
         offline_mode = FALSE;
     } else {
-        offline_mode = moko_settings_get_boolean(value);
+        offline_mode = settings_to_boolean(value);
         g_free(value);
     }
 
@@ -188,7 +189,7 @@ void shutdown_window_show(void)
 void shutdown_window_init(void)
 {
     // phone settings
-    phone_settings = moko_settings_connect(MOKO_PHONE_NAME, MOKO_PHONE_SETTINGS_PATH);
+    phone_settings = settings_connect(MOKO_PHONE_NAME, MOKO_PHONE_SETTINGS_PATH);
 
     win = elm_win_add(NULL, "mokopanel_shutdown", ELM_WIN_DIALOG_BASIC);
 

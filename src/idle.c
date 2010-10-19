@@ -23,8 +23,8 @@
 #include <sys/ioctl.h>
 #include <linux/input.h>
 
-#include <libmokosuite/mokosuite.h>
-#include <libmokosuite/settings-service.h>
+#include <mokosuite/utils/settingsdb.h>
+#include <mokosuite/utils/settings.h>
 
 #include <freesmartphone-glib/odeviced/powersupply.h>
 #include <freesmartphone-glib/odeviced/idlenotifier.h>
@@ -88,8 +88,7 @@ static gboolean ignore_busy = FALSE;
 #define SERVER_DEFAULT (-1)
 #define DEFAULT_TIMEOUT (-600)
 
-
-extern MokoSettingsService* panel_settings;
+extern RemoteSettingsDatabase* panel_settings;
 
 static gboolean _ts_prepare( GSource* source, gint* timeout )
 {
@@ -420,7 +419,7 @@ static Eina_Bool screen_changed (void *data, int type, void *event_info)
     return EINA_TRUE;
 }
 
-static void _display_backlight(MokoSettingsService *object, const char* key, const char* value)
+static void _display_backlight(const char* key, const char* value)
 {
     g_debug("%s changed to: %s", key, value);
 
@@ -430,32 +429,31 @@ static void _display_backlight(MokoSettingsService *object, const char* key, con
     }
 }
 
-static void _display_dim_usb(MokoSettingsService *object, const char* key, const char* value)
+static void _display_dim_usb(const char* key, const char* value)
 {
     g_debug("%s changed to: %s", key, value);
 
-    dim_on_usb = moko_settings_get_boolean(value);
+    dim_on_usb = settings_to_boolean(value);
 }
 
 static void init_settings()
 {
     char* value = NULL;
 
-    moko_settings_service_get_setting(panel_settings, SETTING_DISPLAY_DIM_USB, NULL, &value, NULL);
+    value = remote_settings_database_GetSetting(panel_settings, SETTING_DISPLAY_DIM_USB, NULL);
     if (value == NULL) {
         // nessuna impostazione definita, impostala
-        moko_settings_service_set_setting(panel_settings, SETTING_DISPLAY_DIM_USB, moko_settings_from_boolean(TRUE), NULL);
+        remote_settings_database_SetSetting(panel_settings, SETTING_DISPLAY_DIM_USB, settings_from_boolean(TRUE));
     } else {
-        dim_on_usb = moko_settings_get_boolean(value);
+        dim_on_usb = settings_to_boolean(value);
         g_free(value);
     }
 
-    value = NULL;
-    moko_settings_service_get_setting(panel_settings, SETTING_DISPLAY_BRIGHTNESS, NULL, &value, NULL);
+    value = remote_settings_database_GetSetting(panel_settings, SETTING_DISPLAY_BRIGHTNESS, NULL);
     if (value == NULL) {
         // nessuna impostazione definita, impostala
         brightness = 90;
-        moko_settings_service_set_setting(panel_settings, SETTING_DISPLAY_BRIGHTNESS, "90", NULL);
+        remote_settings_database_SetSetting(panel_settings, SETTING_DISPLAY_BRIGHTNESS, "90");
     } else {
         brightness = atoi(value);
         odeviced_display_set_brightness(brightness, NULL, NULL);
@@ -540,7 +538,7 @@ void idlescreen_init(MokoPanel* panel)
     #endif
 
     Evas_Object* bg = elm_bg_add(win);
-    char* bg_img = config_get_string("panel", "wallpaper", MOKOSUITE_DATADIR "wallpaper_mountain.jpg");
+    char* bg_img = remote_settings_database_GetSetting(panel_settings, SETTING_SCREENSAVER_IMAGE, MOKOPANEL_DATADIR "/wallpaper_mountain.jpg");
     elm_bg_file_set(bg, bg_img, NULL);
     g_free(bg_img);
 
@@ -549,7 +547,7 @@ void idlescreen_init(MokoPanel* panel)
     evas_object_show(bg);
 
     Evas_Object* lo = elm_layout_add(win);
-    elm_layout_file_set(lo, MOKOSUITE_DATADIR "theme.edj", "idle");
+    elm_layout_file_set(lo, MOKOPANEL_DATADIR "/theme.edj", "idle");
     idle_edje = elm_layout_edje_get(lo);
 
     evas_object_size_hint_weight_set(lo, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
@@ -557,8 +555,8 @@ void idlescreen_init(MokoPanel* panel)
     evas_object_show(lo);
 
     // callback cambiamento per le nostre impostazioni
-    moko_settings_service_callback_add(panel_settings, SETTING_DISPLAY_DIM_USB, _display_dim_usb);
-    moko_settings_service_callback_add(panel_settings, SETTING_DISPLAY_BRIGHTNESS, _display_backlight);
+    remote_settings_database_callback_add(panel_settings, SETTING_DISPLAY_DIM_USB, _display_dim_usb);
+    remote_settings_database_callback_add(panel_settings, SETTING_DISPLAY_BRIGHTNESS, _display_backlight);
 
     g_idle_add(idle_fso_connect, NULL);
 
