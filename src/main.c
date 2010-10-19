@@ -25,8 +25,8 @@
 #include <freesmartphone-glib/freesmartphone-glib.h>
 #include <dbus/dbus-glib-bindings.h>
 
-#define MOKO_PANEL_NAME             "org.mokosuite.panel"
-#define MOKO_PANEL_SETTINGS_PATH    "/org/mokosuite/Panel/Settings"
+#define MOKOPANEL_NAME             "org.mokosuite.panel"
+#define MOKOPANEL_SETTINGS_PATH    "/org/mokosuite/Panel/Settings"
 
 #include "globals.h"
 #include "panel.h"
@@ -101,15 +101,15 @@ int main(int argc, char* argv[])
         g_error("Unable to connect to DBus interface. Exiting.");
 
     if (!org_freedesktop_DBus_request_name (driver_proxy,
-            MOKO_PANEL_NAME, 0, &request_ret, &e)) {
-        g_error("Unable to request panel service name: %s. Exiting.", e->message);
+            MOKOPANEL_NAME, 0, &request_ret, &e)) {
+        g_error("Unable to request name: %s. Exiting.", e->message);
         g_error_free(e);
         return EXIT_FAILURE;
     }
     g_object_unref(driver_proxy);
 
     panel_settings = remote_settings_database_new(system_bus,
-        MOKO_PANEL_SETTINGS_PATH,
+        MOKOPANEL_SETTINGS_PATH,
         MOKOPANEL_SYSCONFDIR "/" PACKAGE ".db");
 
     freesmartphone_glib_init();
