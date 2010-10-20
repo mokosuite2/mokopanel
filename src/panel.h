@@ -89,16 +89,50 @@ typedef struct {
 
 } MokoPanel;
 
+#if 0
 typedef struct {
 
     /* panel stuff */
     MokoPanel* panel;
-    guint sequence;
 
     /* notification window stuff */
     Evas_Object* list;
     Elm_Genlist_Item* item;
     Evas_Object* win;
+
+    /* list of notifications in this group */
+    Eina_List* 
+
+    /* icon path */
+    char* icon_path;
+
+    /* first line of list item */
+    char* summary_format;
+    char* summary;
+    /* second line of list item */
+    char* body_format;
+    char* body;
+
+    /* notification category */
+    char* category;
+
+} MokoNotificationGroup;
+#endif
+
+typedef struct {
+
+    /* panel stuff */
+    MokoPanel* panel;
+    guint id;
+
+    /* notification window stuff */
+    #if 0
+    MokoNotificationGroup* group;
+    #else
+    Evas_Object* list;
+    Elm_Genlist_Item* item;
+    Evas_Object* win;
+    #endif
 
     /* icon object - might be shared across notification of same category */
     Evas_Object* icon;
@@ -145,8 +179,9 @@ void mokopanel_fire_event(MokoPanel* panel, int event, gpointer data);
 void mokopanel_event(MokoPanel* panel, int event, gpointer data);
 
 void mokopanel_notification_represent(MokoPanel* panel);
-int mokopanel_count_notifications(MokoPanel* panel, const char* type);
-Elm_Genlist_Item* mokopanel_get_list_item(MokoPanel* panel, const char* type);
+int mokopanel_count_notifications(MokoPanel* panel, const char* category);
+Elm_Genlist_Item* mokopanel_get_list_item(MokoPanel* panel, const char* category);
+Eina_List* mokopanel_get_category(MokoPanel* panel, const char* category);
 
 void mokopanel_notification_remove(MokoPanel* panel, guint id);
 guint mokopanel_notification_queue(MokoPanel* panel,

@@ -82,47 +82,56 @@ static void _list_selected(void *data, Evas_Object *obj, void *event_info)
 
 static char* notification_genlist_label_get(void *data, Evas_Object * obj, const char *part)
 {
-    MokoNotification* n = (MokoNotification*) data;
-    int c = mokopanel_count_notifications(n->panel, n->category);
+    Eina_List* group = mokopanel_get_category(
+        (MokoPanel*) evas_object_data_get(obj, "panel"),
+        (char*) data);
 
-    if (!strcmp(part, "elm.text")) {
+    if (group) {
+        MokoNotification* n = group->data;
 
-        /*
-        char* fmt = (c == 1) ? n->type->description1 : n->type->description2;
-        if (n->type->format_count)
-            return g_strdup_printf(fmt, c);
-        else
-            return g_strdup(fmt);
-        */
-        return g_strdup("TODO");
+        if (!strcmp(part, "elm.text")) {
 
+            /*
+            char* fmt = (c == 1) ? n->type->description1 : n->type->description2;
+            if (n->type->format_count)
+                return g_strdup_printf(fmt, c);
+            else
+                return g_strdup(fmt);
+            */
+            return g_strdup("TODO");
+
+        }
+
+        else if (!strcmp(part, "elm.text.sub")) {
+
+            //return (c == 1) ? g_strdup(n->subdescription) : NULL;
+            return g_strdup("TODO");
+        }
     }
-
-    else if (!strcmp(part, "elm.text.sub")) {
-
-        //return (c == 1) ? g_strdup(n->subdescription) : NULL;
-        return g_strdup("TODO");
-    }
-
     return NULL;
 }
 
 static Evas_Object* notification_genlist_icon_get(void *data, Evas_Object * obj, const char *part)
 {
-    MokoNotification* n = (MokoNotification*) data;
+    Eina_List* group = mokopanel_get_category(
+        (MokoPanel*) evas_object_data_get(obj, "panel"),
+        (char*) data);
+    if (group) {
+        MokoNotification* n = group->data;
 
-    if (!strcmp(part, "elm.swallow.icon")) {
-        // icona notifica
-        Evas_Object *icon = elm_icon_add(n->win);
-        elm_icon_file_set(icon, n->icon_path, NULL);
-        //evas_object_size_hint_min_set(icon, 100, 100);
-        // TODO icona dimensionata correttamente? :S
-        //elm_icon_smooth_set(icon, TRUE);
-        elm_icon_no_scale_set(icon, TRUE);
-        elm_icon_scale_set(icon, FALSE, FALSE);
-        evas_object_show(icon);
+        if (!strcmp(part, "elm.swallow.icon")) {
+            // icona notifica
+            Evas_Object *icon = elm_icon_add(n->win);
+            elm_icon_file_set(icon, n->icon_path, NULL);
+            //evas_object_size_hint_min_set(icon, 100, 100);
+            // TODO icona dimensionata correttamente? :S
+            //elm_icon_smooth_set(icon, TRUE);
+            elm_icon_no_scale_set(icon, TRUE);
+            elm_icon_scale_set(icon, FALSE, FALSE);
+            evas_object_show(icon);
 
-        return icon;
+            return icon;
+        }
     }
 
     return NULL;
@@ -140,12 +149,14 @@ void notification_window_add(MokoNotification* n)
 
     Elm_Genlist_Item* item = mokopanel_get_list_item(n->panel, n->category);
     if (item) {
+        EINA_LOG_DBG("Item already found for %d, using %p", n->id, item);
         n->item = item;
         elm_genlist_item_update(n->item);
     }
 
     else {
-        n->item = elm_genlist_item_append(notification_list, &itc, n,
+        EINA_LOG_DBG("Creating new item for id %d", n->id);
+        n->item = elm_genlist_item_append(notification_list, &itc, g_strdup(n->category),
             NULL, ELM_GENLIST_ITEM_NONE, NULL, NULL);
     }
 }
@@ -157,10 +168,12 @@ void notification_window_add(MokoNotification* n)
  */
 void notification_window_remove(MokoNotification* n, gboolean update_only)
 {
+    EINA_LOG_DBG("Notification %d, Update_only = %s, Item = %p", n->id,
+        update_only ? "TRUE" : "FALSE", n->item);
+
     if (update_only) {
         elm_genlist_item_update(n->item);
     }
-
     else {
         elm_genlist_item_del(n->item);
         n->item = NULL;
@@ -244,6 +257,7 @@ void notify_window_init(MokoPanel* panel)
     elm_box_pack_start(vbox, hdrbox);
 
     Evas_Object* list = elm_genlist_add(win);
+    evas_object_data_set(list, "panel", panel);
     elm_genlist_bounce_set(list, FALSE, FALSE);
     evas_object_smart_callback_add(list, "selected", _list_selected, NULL);
 
