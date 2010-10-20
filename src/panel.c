@@ -464,7 +464,8 @@ guint mokopanel_notification_queue(MokoPanel* panel,
     Eina_List* catg_list = NULL;
 
     if (!catg || !strlen(catg))
-        catg = DEFAULT_CATEGORY;
+        // FIXME ehm...
+        catg = app_name;
 
     // get icon
     if (!icon) {
