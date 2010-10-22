@@ -7,6 +7,9 @@ public class NotificationsService : Object
 {
     private void* panel;
 
+    public signal void NotificationClosed(uint id, uint reason);
+    public signal void ActionInvoked(uint id, string action_key);
+
     public NotificationsService(void* panel_ptr)
     {
         try {
@@ -39,6 +42,7 @@ public class NotificationsService : Object
     public void CloseNotification(uint id)
     {
         MokoPanel.notification_remove(this.panel, id);
+        this.NotificationClosed(id, 3);
     }
 
     public string[] GetCapabilities()
@@ -52,5 +56,17 @@ public class NotificationsService : Object
         vendor = "Mokosuite";
         version = Config.VERSION;
         spec_version = "0.9";
+    }
+
+    [DBus (visible=false)]
+    public void emit_ActionInvoked(uint id, string action)
+    {
+        this.ActionInvoked(id, action);
+    }
+
+    [DBus (visible=false)]
+    public void emit_NotificationClosed(uint id, uint reason)
+    {
+        this.NotificationClosed(id, reason);
     }
 }
