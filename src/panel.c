@@ -115,6 +115,9 @@ no_icon:
     g_free(no->category);
     g_strfreev(no->actions);
 
+    g_free(no->summary_multiple);
+    g_free(no->body_multiple);
+
     g_free(no);
 }
 
@@ -529,6 +532,17 @@ no_icon:
     data->category = g_strdup(catg);
     data->timeout = timeout;
 
+    // actions
+    if (actions && actions_length > 0) {
+        data->actions = g_new(char*, actions_length + 1);
+        int i;
+        for (i = 0; i < actions_length; i++) {
+            EINA_LOG_DBG("action[%d]=%s", i, actions[i]);
+            data->actions[i] = g_strdup(actions[i]);
+        }
+        data->actions[i] = NULL;
+    }
+
     g_hash_table_foreach(hints, _dump_map, NULL);
 
     // flags
@@ -539,8 +553,14 @@ no_icon:
     data->no_clear = map_get_bool(hints, "x-mokosuite.flags.noclear", TRUE);
     data->autodel = map_get_bool(hints, "x-mokosuite.flags.autodel", TRUE);
 
+    // multiple notifications hints
+    data->summary_multiple = g_strdup(map_get_string(hints, "x-mokosuite.summary-multiple"));
+    data->summary_count = map_get_int(hints, "x-mokosuite.summary-count");
+    data->body_multiple = g_strdup(map_get_string(hints, "x-mokosuite.body-multiple"));
+    data->body_count = map_get_int(hints, "x-mokosuite.body-count");
+
     // automatic delay -- set autodel
-    if (timeout < 0)
+    if (timeout < 0 || !data->actions)
         data->autodel = TRUE;
 
     g_hash_table_insert(panel->categories, g_strdup(data->category), eina_list_append(catg_list, data));

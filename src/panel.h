@@ -163,6 +163,16 @@ typedef struct {
     /* delete on click -- extracted from hints */
     gboolean autodel;
 
+    /* text to display if multiple different summaries */
+    char* summary_multiple;
+    /* use sprintf() to format notifications count */
+    gboolean summary_count;
+
+    /* text to display if multiple different bodies */
+    char* body_multiple;
+    /* use sprintf() to format notifications count */
+    gboolean body_count;
+
 } MokoNotification;
 
 #define PANEL_HEIGHT        (SCALE_FACTOR * 28)

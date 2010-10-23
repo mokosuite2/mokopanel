@@ -40,6 +40,7 @@
 #include "idle.h"
 #include "notifications-misc.h"
 #include "notifications-win.h"
+#include "notifications-service.h"
 
 #include <glib/gi18n-lib.h>
 
@@ -71,11 +72,33 @@ static void _focus_out(void* data, Evas_Object* obj, void* event_info)
 
 static void _list_selected(void *data, Evas_Object *obj, void *event_info)
 {
-    MokoNotification* n = (MokoNotification*) elm_genlist_item_data_get((const Elm_Genlist_Item *)event_info);
+    MokoPanel* panel = (MokoPanel*) evas_object_data_get(obj, "panel");
+    Eina_List* group = mokopanel_get_category(panel,
+        (char*) elm_genlist_item_data_get((const Elm_Genlist_Item *)event_info));
 
     elm_genlist_item_selected_set((Elm_Genlist_Item*)event_info, FALSE);
+    NotificationsService* service = NOTIFICATIONS_SERVICE(panel->service);
 
-    // TODO notify_internal_exec(n);
+    if (eina_list_count(group) > 0) {
+        Eina_List* iter;
+        MokoNotification* n = NULL;
+        EINA_LIST_FOREACH(group, iter, n) {
+            // send action back
+            if (n->actions && n->actions[0]) {
+                notifications_service_emit_ActionInvoked(service,
+                    n->id, n->actions[0]);
+                break;
+            }
+        }
+
+        int id;
+        EINA_LIST_FOREACH(group, iter, n)
+            if (n->autodel) {
+                id = n->id;
+                mokopanel_notification_remove(n->panel, n->id);
+                notifications_service_emit_NotificationClosed(service, n->id, 4);
+            }
+    }
 
     notify_window_hide();
 }
@@ -85,27 +108,46 @@ static char* notification_genlist_label_get(void *data, Evas_Object * obj, const
     Eina_List* group = mokopanel_get_category(
         (MokoPanel*) evas_object_data_get(obj, "panel"),
         (char*) data);
+    int c = eina_list_count(group);
 
-    if (group) {
+    EINA_LOG_DBG("Group count = %d", c);
+    if (c > 0) {
+        
         MokoNotification* n = group->data;
 
         if (!strcmp(part, "elm.text")) {
 
-            /*
-            char* fmt = (c == 1) ? n->type->description1 : n->type->description2;
-            if (n->type->format_count)
-                return g_strdup_printf(fmt, c);
-            else
-                return g_strdup(fmt);
-            */
-            return g_strdup("TODO");
+            // single notification, no problems
+            if (c == 1) {
+                return g_strdup(n->summary);
+            }
+
+            // multiple notifications, decide which one to display
+            else {
+                EINA_LOG_DBG("Multiple notifications, summary = %s (%s)", n->summary, n->summary_multiple);
+                if (n->summary_multiple && n->summary_count)
+                    return g_strdup_printf(n->summary_multiple, c);
+                else
+                    return g_strdup(n->summary);
+            }
 
         }
 
         else if (!strcmp(part, "elm.text.sub")) {
 
-            //return (c == 1) ? g_strdup(n->subdescription) : NULL;
-            return g_strdup("TODO");
+            // single notification, no problems
+            if (c == 1) {
+                return g_strdup(n->body);
+            }
+
+            // multiple notifications, decide which one to display
+            else {
+                if (n->body_multiple && n->body_count)
+                    return g_strdup_printf(n->body_multiple, c);
+                else
+                    return g_strdup("");
+            }
+
         }
     }
     return NULL;
