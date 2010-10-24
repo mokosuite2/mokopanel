@@ -1,6 +1,6 @@
 /*
- * Mokosuite
- * Panel notifications window
+ * MokoPanel
+ * Notifications window
  * Copyright (C) 2009-2010 Daniele Ricci <daniele.athome@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify

@@ -63,11 +63,10 @@ int main(int argc, char* argv[])
     eina_log_domain_level_set(PACKAGE, LOG_LEVEL);
 
     EINA_LOG_INFO("%s version %s", PACKAGE_NAME, VERSION);
-    elm_init(argc, argv);
 
-    /* other things */
+    /* initialize mokosuite */
     mokosuite_utils_init();
-    mokosuite_ui_init();
+    mokosuite_ui_init(argc, argv);
 
     /* GLib mainloop integration */
     if (!ecore_main_loop_glib_integrate())

@@ -377,7 +377,7 @@ char** mokopanel_notification_caps(MokoPanel* panel, int* length)
 }
 
 /**
- * Rimuove una notifica (rimuove l'icona dalla prima pagina)
+ * Rimuove una notifica.
  */
 void mokopanel_notification_remove(MokoPanel* panel, guint id)
 {
@@ -423,7 +423,7 @@ void mokopanel_notification_remove(MokoPanel* panel, guint id)
 
 static void _dump_map(gpointer key, gpointer value, gpointer data)
 {
-    EINA_LOG_DBG("key=\"%s\", value=\"%s\"", (char*) key, (char*) value);
+    EINA_LOG_DBG("key=\"%s\", value=%p", (char*) key, value);
 }
 
 /**
@@ -533,7 +533,7 @@ no_icon:
     data->timeout = timeout;
 
     // actions
-    if (actions && actions_length > 0) {
+    if (actions && actions_length > 1) {
         data->actions = g_new(char*, actions_length + 1);
         int i;
         for (i = 0; i < actions_length; i++) {
