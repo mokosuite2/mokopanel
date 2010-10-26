@@ -23,8 +23,7 @@
 #include <sys/ioctl.h>
 #include <linux/input.h>
 
-#include <mokosuite/utils/settingsdb.h>
-#include <mokosuite/utils/settings.h>
+#include <mokosuite/utils/remote-config-service.h>
 
 #include <freesmartphone-glib/odeviced/powersupply.h>
 #include <freesmartphone-glib/odeviced/idlenotifier.h>
@@ -88,7 +87,7 @@ static gboolean ignore_busy = FALSE;
 #define SERVER_DEFAULT (-1)
 #define DEFAULT_TIMEOUT (-600)
 
-extern RemoteSettingsDatabase* panel_settings;
+extern RemoteConfigService* panel_config;
 
 static gboolean _ts_prepare( GSource* source, gint* timeout )
 {
@@ -419,57 +418,35 @@ static Eina_Bool screen_changed (void *data, int type, void *event_info)
     return EINA_TRUE;
 }
 
-static void _display_backlight(const char* key, const char* value)
+static void _config_changed(RemoteConfigService* cfg, const char* section, const char* key, GValue* value, void* user_data)
 {
-    g_debug("%s changed to: %s", key, value);
+    // non siamo noi
+    EINA_LOG_DBG("section=%s, key=%s, value=%p, value.type=%s", section, key, value, G_VALUE_TYPE_NAME(value));
+    if (strcmp(section, CONFIG_SECTION_IDLE)) return;
 
-    if (odevicedDisplayBus) {
-        brightness = atoi(value);
+    if (!strcmp(key, CONFIG_DISPLAY_DIM_USB)) {
+        dim_on_usb = g_value_get_boolean(value);
+    }
+
+    else if (!strcmp(key, CONFIG_DISPLAY_BRIGHTNESS)) {
+        brightness = g_value_get_int(value);
         odeviced_display_set_brightness(brightness, NULL, NULL);
     }
-}
-
-static void _display_dim_usb(const char* key, const char* value)
-{
-    g_debug("%s changed to: %s", key, value);
-
-    dim_on_usb = settings_to_boolean(value);
 }
 
 static void init_settings()
 {
-    char* value = NULL;
-
-    value = remote_settings_database_GetSetting(panel_settings, SETTING_DISPLAY_DIM_USB, NULL);
-    if (value == NULL) {
+    if (!remote_config_service_get_bool(panel_config, CONFIG_SECTION_IDLE, CONFIG_DISPLAY_DIM_USB, &dim_on_usb))
         // nessuna impostazione definita, impostala
-        remote_settings_database_SetSetting(panel_settings, SETTING_DISPLAY_DIM_USB, settings_from_boolean(TRUE));
-    } else {
-        dim_on_usb = settings_to_boolean(value);
-        g_free(value);
-    }
+        remote_config_service_set_bool(panel_config, CONFIG_SECTION_IDLE, CONFIG_DISPLAY_DIM_USB, CONFIG_DEFAULT_DISPLAY_DIM_USB);
 
-    value = remote_settings_database_GetSetting(panel_settings, SETTING_DISPLAY_BRIGHTNESS, NULL);
-    if (value == NULL) {
+    if (!remote_config_service_get_int(panel_config, CONFIG_SECTION_IDLE, CONFIG_DISPLAY_BRIGHTNESS, &brightness))
         // nessuna impostazione definita, impostala
-        brightness = 90;
-        remote_settings_database_SetSetting(panel_settings, SETTING_DISPLAY_BRIGHTNESS, "90");
-    } else {
-        brightness = atoi(value);
-        odeviced_display_set_brightness(brightness, NULL, NULL);
-        g_free(value);
-    }
+        remote_config_service_set_int(panel_config, CONFIG_SECTION_IDLE, CONFIG_DISPLAY_BRIGHTNESS, CONFIG_DEFAULT_DISPLAY_BRIGHTNESS);
 
     // stato iniziale! :)
     odeviced_idlenotifier_set_state(IDLE_STATE_IDLE_PRELOCK, NULL, NULL);
     screensaver_off();
-
-    #if 0
-    // vecchio stato iniziale! :)
-    odeviced_idle_notifier_set_state(DEVICE_IDLE_STATE_BUSY, NULL, NULL);
-    idle_raise(TRUE);
-    screensaver_off();
-    #endif
 }
 
 static gboolean idle_fso_connect(gpointer data)
@@ -538,7 +515,10 @@ void idlescreen_init(MokoPanel* panel)
     #endif
 
     Evas_Object* bg = elm_bg_add(win);
-    char* bg_img = remote_settings_database_GetSetting(panel_settings, SETTING_SCREENSAVER_IMAGE, MOKOPANEL_DATADIR "/wallpaper_mountain.jpg");
+    char* bg_img = NULL;
+    if (!remote_config_service_get_string(panel_config, CONFIG_SECTION_IDLE, CONFIG_SCREENSAVER_IMAGE, &bg_img))
+        bg_img = g_strdup(MOKOPANEL_DATADIR "/wallpaper_mountain.jpg");
+
     elm_bg_file_set(bg, bg_img, NULL);
     g_free(bg_img);
 
@@ -555,8 +535,7 @@ void idlescreen_init(MokoPanel* panel)
     evas_object_show(lo);
 
     // callback cambiamento per le nostre impostazioni
-    remote_settings_database_callback_add(panel_settings, SETTING_DISPLAY_DIM_USB, _display_dim_usb);
-    remote_settings_database_callback_add(panel_settings, SETTING_DISPLAY_BRIGHTNESS, _display_backlight);
+    g_signal_connect(G_OBJECT(panel_config), "changed", G_CALLBACK(_config_changed), NULL);
 
     g_idle_add(idle_fso_connect, NULL);
 

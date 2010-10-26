@@ -22,7 +22,6 @@
 #include <Ecore_X.h>
 #include <Ecore_X_Atoms.h>
 #include <glib.h>
-#include <mokosuite/utils/settingsdb.h>
 #include <mokosuite/utils/misc.h>
 #include <freesmartphone-glib/freesmartphone-glib.h>
 #include <freesmartphone-glib/odeviced/idlenotifier.h>

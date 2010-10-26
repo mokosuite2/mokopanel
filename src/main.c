@@ -20,13 +20,14 @@
 
 #include <stdlib.h>
 #include <mokosuite/utils/utils.h>
+#include <mokosuite/utils/dbus.h>
 #include <mokosuite/ui/gui.h>
-#include <mokosuite/utils/settingsdb.h>
+#include <mokosuite/utils/remote-config-service.h>
 #include <freesmartphone-glib/freesmartphone-glib.h>
 #include <dbus/dbus-glib-bindings.h>
 
 #define MOKOPANEL_NAME             "org.mokosuite.panel"
-#define MOKOPANEL_SETTINGS_PATH    "/org/mokosuite/Panel/Settings"
+#define MOKOPANEL_CONFIG_PATH    "/org/mokosuite/Panel/Config"
 
 #include "globals.h"
 #include "panel.h"
@@ -40,7 +41,7 @@ int _log_dom = -1;
 static MokoPanel* main_panel = NULL;
 
 /* esportabili */
-RemoteSettingsDatabase* panel_settings = NULL;
+RemoteConfigService* panel_config = NULL;
 
 #if 0
 static gboolean test_after_notify(MokoPanel* panel)
@@ -69,9 +70,9 @@ int main(int argc, char* argv[])
     mokosuite_ui_init(argc, argv);
 
     /* GLib mainloop integration */
-    if (!ecore_main_loop_glib_integrate())
-        g_error("Ecore/GLib integration failed!");
+    mokosuite_utils_glib_init(TRUE);
 
+    /* Freesmartphone */
     freesmartphone_glib_init();
 
     EINA_LOG_DBG("Loading data from %s", MOKOPANEL_DATADIR);
@@ -81,37 +82,22 @@ int main(int argc, char* argv[])
     elm_theme_overlay_add(NULL, "elm/label/base/panel");
     elm_theme_overlay_add(NULL, "elm/bg/base/panel");
 
-    GError *e = NULL;
-    DBusGProxy *driver_proxy;
-    guint request_ret;
-
-    DBusGConnection* system_bus = dbus_g_bus_get(DBUS_BUS_SYSTEM, &e);
-    if (e) {
-        g_error("Unable to connect to system bus: %s", e->message);
-        g_error_free(e);
+    DBusGConnection* session_bus = dbus_session_bus();
+    if (!session_bus) {
+        EINA_LOG_ERR("Unable to connect to session bus. Exiting.");
         return EXIT_FAILURE;
     }
 
-    driver_proxy = dbus_g_proxy_new_for_name (system_bus,
-            DBUS_SERVICE_DBUS,
-            DBUS_PATH_DBUS,
-            DBUS_INTERFACE_DBUS);
-    if (!driver_proxy)
-        g_error("Unable to connect to DBus interface. Exiting.");
-
-    if (!org_freedesktop_DBus_request_name (driver_proxy,
-            MOKOPANEL_NAME, 0, &request_ret, &e)) {
-        g_error("Unable to request name: %s. Exiting.", e->message);
-        g_error_free(e);
+    if (!dbus_request_name(session_bus, MOKOPANEL_NAME)) {
+        EINA_LOG_ERR("Unable to request name %s. Exiting.", MOKOPANEL_NAME);
         return EXIT_FAILURE;
     }
-    g_object_unref(driver_proxy);
 
-    panel_settings = remote_settings_database_new(system_bus,
-        MOKOPANEL_SETTINGS_PATH,
-        MOKOPANEL_SYSCONFDIR "/" PACKAGE ".db");
-
-    freesmartphone_glib_init();
+    char* cfg_file = g_strdup_printf("%s/.config/mokosuite/%s.conf", g_get_home_dir(), PACKAGE);
+    panel_config = remote_config_service_new(session_bus,
+        MOKOPANEL_CONFIG_PATH,
+         cfg_file);
+    g_free(cfg_file);
 
     main_panel = mokopanel_new("mokopanel", "Panel");
 

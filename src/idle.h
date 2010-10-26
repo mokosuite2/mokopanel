@@ -23,9 +23,14 @@
 
 #include "panel.h"
 
-#define SETTING_DISPLAY_DIM_USB     "display_dim_usb"
-#define SETTING_DISPLAY_BRIGHTNESS  "display_brightness"
-#define SETTING_SCREENSAVER_IMAGE   "screensaver_image"
+#define CONFIG_SECTION_IDLE        "idle"
+
+#define CONFIG_DISPLAY_DIM_USB     "display_dim_usb"
+#define CONFIG_DISPLAY_BRIGHTNESS  "display_brightness"
+#define CONFIG_SCREENSAVER_IMAGE   "screensaver_image"
+
+#define CONFIG_DEFAULT_DISPLAY_DIM_USB      TRUE
+#define CONFIG_DEFAULT_DISPLAY_BRIGHTNESS   90
 
 void idlescreen_update_operator(const char* name);
 void idlescreen_update_time(const char* time);
