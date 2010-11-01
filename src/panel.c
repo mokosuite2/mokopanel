@@ -431,7 +431,7 @@ static void _dump_map(gpointer key, gpointer value, gpointer data)
  * Se il testo è NULL, la notifica è inserita solamente in prima pagina.
  * Se il testo è diverso da NULL, la notifica sarà visualizzata per qualche
  * secondo, riga per riga; dopodiché sarà inserita in prima pagina.
- * 
+ *
  * TODO
  * @return l'ID univoco della notifica
  */

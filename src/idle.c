@@ -226,21 +226,21 @@ void idle_raise(gboolean ts_grab)
         ts_io.fd = open(TS_DEVICE, O_RDONLY);
         if (ts_io.fd < 0) {
             g_critical("Error opening touchscreen device: %d", errno);
-            return;
         }
+        else {
+            static GSourceFuncs ts_funcs = {
+                _ts_prepare,
+                _ts_check,
+                _ts_dispatch,
+                NULL,
+            };
+            ts_src = g_source_new(&ts_funcs, sizeof (GSource));
+            g_source_add_poll(ts_src, &ts_io);
+            g_source_attach(ts_src, NULL);
 
-        static GSourceFuncs ts_funcs = {
-            _ts_prepare,
-            _ts_check,
-            _ts_dispatch,
-            NULL,
-        };
-        ts_src = g_source_new(&ts_funcs, sizeof (GSource));
-        g_source_add_poll(ts_src, &ts_io);
-        g_source_attach(ts_src, NULL);
-
-        // attiva EVIOCGRAB su touchscreen
-        ioctl(ts_io.fd, EVIOCGRAB, 1);
+            // attiva EVIOCGRAB su touchscreen
+            ioctl(ts_io.fd, EVIOCGRAB, 1);
+        }
     }
 
     // reimposta controllo prelock
