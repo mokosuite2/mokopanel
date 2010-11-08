@@ -11,6 +11,6 @@ cd data && sudo make install && cd .. &&
 if [ "$BUS" == "session" ]; then
 DISPLAY=$DISPLAY ELM_FINGER=80 ELM_SCALE=2 ELM_THEME=gry src/mokopanel
 else
-sudo DISPLAY=$DISPLAY ELM_FINGER=80 ELM_SCALE=2 ELM_THEME=gry DBUS_SYSTEM_BUS_ADDRESS="tcp:host=neo,port=8000" src/mokopanel
+DISPLAY=$DISPLAY ELM_FINGER=80 ELM_SCALE=2 ELM_THEME=gry DBUS_SYSTEM_BUS_ADDRESS="tcp:host=neo,port=8000" src/mokopanel
 fi
 )
