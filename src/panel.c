@@ -45,7 +45,7 @@ static char* get_real_icon(const char* name)
         return g_strdup(name + strlen("file://"));
     }
 
-    return efreet_icon_path_find(ICON_THEME, name, ICON_SIZE);
+    return g_strdup(efreet_icon_path_find(ICON_THEME, name, ICON_SIZE));
 }
 
 static char* strip_body(const char* body)
