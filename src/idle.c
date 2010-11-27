@@ -331,7 +331,11 @@ static void idle_state(gpointer data, int state)
     // SUSPEND - sospendi
     else if (state == IDLE_STATE_SUSPEND) {
         odeviced_powersupply_get_power_status(_suspend_power_check, NULL);
+    }
 
+    // RESUME - riprendi
+    else if (state == IDLE_STATE_AWAKE) {
+        screensaver_off();
     }
 
     // riattivazione - disattiva screensaver e idlescreen
