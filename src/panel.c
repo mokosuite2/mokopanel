@@ -115,9 +115,6 @@ no_icon:
     g_free(no->category);
     g_strfreev(no->actions);
 
-    g_free(no->summary_multiple);
-    g_free(no->body_multiple);
-
     g_free(no);
 }
 
@@ -552,12 +549,6 @@ no_icon:
     data->ongoing = map_get_bool(hints, "x-mokosuite.flags.ongoing", TRUE);
     data->no_clear = map_get_bool(hints, "x-mokosuite.flags.noclear", TRUE);
     data->autodel = map_get_bool(hints, "x-mokosuite.flags.autodel", TRUE);
-
-    // multiple notifications hints
-    data->summary_multiple = g_strdup(map_get_string(hints, "x-mokosuite.summary-multiple"));
-    data->summary_count = map_get_int(hints, "x-mokosuite.summary-count");
-    data->body_multiple = g_strdup(map_get_string(hints, "x-mokosuite.body-multiple"));
-    data->body_count = map_get_int(hints, "x-mokosuite.body-count");
 
     // automatic delay -- set autodel
     if (timeout < 0 || !data->actions)

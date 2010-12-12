@@ -111,42 +111,29 @@ static char* notification_genlist_label_get(void *data, Evas_Object * obj, const
 
     EINA_LOG_DBG("Group count = %d", c);
     if (c > 0) {
-        
+
         MokoNotification* n = group->data;
 
         if (!strcmp(part, "elm.text")) {
 
             // single notification, no problems
-            if (c == 1) {
+            if (c == 1)
                 return g_strdup(n->summary);
-            }
 
-            // multiple notifications, decide which one to display
-            else {
-                EINA_LOG_DBG("Multiple notifications, summary = %s (%s)", n->summary, n->summary_multiple);
-                if (n->summary_multiple && n->summary_count)
-                    return g_strdup_printf(n->summary_multiple, c);
-                else
-                    return g_strdup(n->summary);
-            }
-
+            // multiple notifications, append count
+            else
+                return g_strdup_printf("%s (%d)", n->summary, c);
         }
 
         else if (!strcmp(part, "elm.text.sub")) {
 
             // single notification, no problems
-            if (c == 1) {
+            if (c == 1)
                 return g_strdup(n->body);
-            }
 
-            // multiple notifications, decide which one to display
-            else {
-                if (n->body_multiple && n->body_count)
-                    return g_strdup_printf(n->body_multiple, c);
-                else
-                    return g_strdup("");
-            }
-
+            // multiple notifications, display nothing
+            else
+                return g_strdup("");
         }
     }
     return NULL;
@@ -236,7 +223,7 @@ void notify_window_init(MokoPanel* panel)
     evas_object_smart_callback_add(win, "focus,out", _focus_out, NULL);
     evas_object_smart_callback_add(win, "delete,request", _focus_out, NULL);
 
-    #if 0
+    #if 1
     // FIXME FIXME FIXME!!!
     evas_object_resize(win, 480, 600);
     evas_object_move(win, 0, 40);
