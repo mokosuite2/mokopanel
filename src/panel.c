@@ -40,7 +40,7 @@ static char* get_real_icon(const char* name)
 {
     if (!name) return NULL;
 
-    EINA_LOG_DBG("Retrieving icon \"%s\"", name);
+    EINA_LOG_DBG("retrieving icon \"%s\"", name);
     if (g_str_has_prefix(name, "file://")) {
         return g_strdup(name + strlen("file://"));
     }
@@ -458,6 +458,7 @@ guint mokopanel_notification_queue(MokoPanel* panel,
     Eina_List *iter;
     void* _data;
     char* icon_path = NULL;
+    const char* icon_hint = NULL;
 
     // get category
     const char* catg = map_get_string(hints, "category");
@@ -467,21 +468,31 @@ guint mokopanel_notification_queue(MokoPanel* panel,
         // FIXME ehm...
         catg = app_name;
 
+    // TODO image_data hint
+    icon_hint = map_get_string(hints, "image_path");
+
+    if (icon_hint) {
+        EINA_LOG_DBG("found image_path hint (%s)", icon_hint);
+        icon = icon_hint;
+    }
+
     // get icon
     if (!icon) {
-        // TODO support for icon_data hint
+        EINA_LOG_DBG("no icon found, using default (%s)", DEFAULT_ICON);
         icon_path = g_strdup(DEFAULT_ICON);
     }
 
     else {
         // retrieve real icon path
-        icon_path = get_real_icon(icon_path);
+        icon_path = get_real_icon(icon);
     }
 
-    if (!icon_path)
+    if (!icon_path) {
+        EINA_LOG_DBG("icon real path not found, using default (%s)", DEFAULT_ICON);
         icon_path = g_strdup(DEFAULT_ICON);
+    }
 
-    EINA_LOG_DBG("Icon path: \"%s\"", icon_path);
+    EINA_LOG_DBG("will use icon in: \"%s\"", icon_path);
 
     catg_list = g_hash_table_lookup(panel->categories, catg);
 
