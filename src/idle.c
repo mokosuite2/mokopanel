@@ -23,6 +23,7 @@
 #include <sys/ioctl.h>
 #include <linux/input.h>
 
+#include <mokosuite/utils/utils.h>
 #include <mokosuite/utils/remote-config-service.h>
 
 #include <freesmartphone-glib/odeviced/powersupply.h>
@@ -72,11 +73,8 @@ static GPollFD ts_io = {0};
 static GSource* ts_src = NULL;
 
 static gboolean dim_on_usb = TRUE;
-
 static int brightness = -1;
-
-static gboolean screensaver_status = FALSE;
-static gboolean ignore_busy = FALSE;
+static bool screensaver_status = FALSE;
 
 // per screensaver X
 #define ALL -1
@@ -88,6 +86,8 @@ static gboolean ignore_busy = FALSE;
 #define DEFAULT_TIMEOUT (-600)
 
 extern RemoteConfigService* panel_config;
+
+static void grab_ts(void);
 
 static gboolean _ts_prepare( GSource* source, gint* timeout )
 {
@@ -105,6 +105,11 @@ static gboolean _ts_dispatch( GSource* source, GSourceFunc callback, gpointer da
         struct input_event event;
         if (!read(ts_io.fd, &event, sizeof( struct input_event )))
             return FALSE;   // eeeh???
+
+        else {
+            if (current_state == IDLE_STATE_IDLE_DIM)
+                odeviced_idlenotifier_set_state(IDLE_STATE_BUSY, NULL, NULL);
+        }
     }
 
     return TRUE;
@@ -214,11 +219,9 @@ void screensaver_off(void)
 }
 #endif
 
-void idle_raise(gboolean ts_grab)
+static void grab_ts(void)
 {
-    shutdown_window_hide();
-
-    if (ts_src == NULL && ts_grab) {
+    if (ts_src == NULL) {
 
         // grab touchscreen
         ts_io.events = G_IO_IN | G_IO_HUP | G_IO_ERR;
@@ -242,6 +245,14 @@ void idle_raise(gboolean ts_grab)
             ioctl(ts_io.fd, EVIOCGRAB, 1);
         }
     }
+}
+
+void idle_raise(gboolean ts_grab)
+{
+    shutdown_window_hide();
+
+    if (ts_grab)
+        grab_ts();
 
     // reimposta controllo prelock
     delayed_prelock_timeout = 0;
@@ -309,6 +320,7 @@ static void idle_state(gpointer data, int state)
     if (state == IDLE_STATE_IDLE_DIM) {
         // TODO parametrizzare :)
         odeviced_display_set_brightness(50, NULL, NULL);
+        grab_ts();
     }
 
     // PRELOCK - mostra idlescreen
@@ -353,10 +365,7 @@ static void idle_state(gpointer data, int state)
         }
 
         else {
-            if (!ignore_busy)
-                screensaver_off();
-            else
-                ignore_busy = FALSE;
+            screensaver_off();
         }
     }
 }
@@ -390,12 +399,6 @@ static void input_event(gpointer data, const char* source, int action, int durat
             shutdown_window_show();
         }
 
-    }
-
-    else if (!strcmp(source, "AUX")) {
-        if (screensaver_status) {
-            ignore_busy = TRUE;
-        }
     }
 }
 

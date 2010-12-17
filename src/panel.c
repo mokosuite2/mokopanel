@@ -565,9 +565,10 @@ no_icon:
     if (timeout < 0 || !data->actions)
         data->autodel = TRUE;
 
-    g_hash_table_insert(panel->categories, g_strdup(data->category), eina_list_append(catg_list, data));
-    if (!id)
+    if (!id) {
+        g_hash_table_insert(panel->categories, g_strdup(data->category), eina_list_append(catg_list, data));
         panel->list = eina_list_append(panel->list, data);
+    }
 
     // aggiungi alla finestra delle notifiche
     notification_window_add(data);
