@@ -247,6 +247,17 @@ static void grab_ts(void)
     }
 }
 
+static void ungrab_ts(void)
+{
+    if (ts_src != NULL) {
+        ioctl(ts_io.fd, EVIOCGRAB, 0);
+        close(ts_io.fd);
+
+        g_source_destroy(ts_src);
+        ts_src = NULL;
+    }
+}
+
 void idle_raise(gboolean ts_grab)
 {
     shutdown_window_hide();
@@ -266,13 +277,7 @@ void idle_raise(gboolean ts_grab)
 void idle_hide(void)
 {
     // disattiva EVIOCGRAB su touchscreen
-    if (ts_src != NULL) {
-        ioctl(ts_io.fd, EVIOCGRAB, 0);
-        close(ts_io.fd);
-
-        g_source_destroy(ts_src);
-        ts_src = NULL;
-    }
+    ungrab_ts();
 
     if (delayed_prelock_timeout > 0)
         g_source_remove(delayed_prelock_timeout);
@@ -366,6 +371,7 @@ static void idle_state(gpointer data, int state)
 
         else {
             screensaver_off();
+            ungrab_ts();
         }
     }
 }
