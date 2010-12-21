@@ -31,10 +31,17 @@
 #include "gsm.h"
 #include "notifications-win.h"
 #include "notifications-service.h"
+#include "idle.h"
 
 #define ICON_THEME          "shr"
 
 static void process_notification_queue(gpointer data);
+
+typedef struct {
+    int id;
+    char* icon;
+    char* text;
+} notification_push_data_t;
 
 static char* get_real_icon(const char* name)
 {
@@ -131,6 +138,7 @@ static gboolean pop_text_notification(gpointer data)
     MokoPanel* panel = (MokoPanel *) evas_object_data_get(obj, "panel");
 
     g_queue_pop_head(panel->queue);
+    EINA_LOG_DBG("queue: %d left", panel->queue->length);
 
     // se c'e' dell'altro, continua a processare
     if (panel->queue->length > 0)
@@ -155,7 +163,7 @@ static void process_notification_queue(gpointer data)
     MokoPanel* panel = (MokoPanel *) data;
 
     // recupera la notifica in testa alla coda e visualizzala
-    gpointer* in_data = (gpointer*) g_queue_peek_head(panel->queue);
+    notification_push_data_t* in_data = (notification_push_data_t*) g_queue_peek_head(panel->queue);
 
     // questo non dovrebbe accadare
     g_return_if_fail(in_data != NULL);
@@ -169,7 +177,7 @@ static void process_notification_queue(gpointer data)
     evas_object_data_set(msgbox, "panel", panel);
 
     Evas_Object *ic = elm_icon_add(panel->win);
-    elm_icon_file_set(ic, (const char*) in_data[1], NULL);
+    elm_icon_file_set(ic, (const char*) in_data->icon, NULL);
     elm_icon_no_scale_set(ic, TRUE);
     #ifdef QVGA
     elm_icon_scale_set(ic, FALSE, TRUE);
@@ -184,7 +192,7 @@ static void process_notification_queue(gpointer data)
     elm_box_pack_end(msgbox, ic);
 
     Evas_Object* lmsg = elm_label_add(panel->win);
-    elm_label_label_set(lmsg, (const char*) in_data[0]);
+    elm_label_label_set(lmsg, (const char*) in_data->text);
     elm_object_style_set(lmsg, "panel");
 
     evas_object_size_hint_weight_set (lmsg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
@@ -199,44 +207,77 @@ static void process_notification_queue(gpointer data)
     g_timeout_add_seconds(3, pop_text_notification, msgbox);
 
     // libera tutto
-    g_free(in_data[0]);
-    g_free(in_data[1]);
+    g_free(in_data->icon);
+    g_free(in_data->text);
     g_free(in_data);
 }
 
 /**
- * Prepara un'array di gpointer per uso dei pusher interni.
- * Se id >= 0 aggiunge un terzo elemento all'array
+ * Prepara un'array di strutture per uso dei pusher interni.
  */
-static gpointer* prepare_text_struct(const char* text, const char* icon, int id)
+static notification_push_data_t** prepare_text_struct(int id, const char* text, const char* icon, int* length)
 {
-    // FIXME splittare la stringa con i newline!!!
+    // split string
+    char** lines = g_strsplit(text, "\n", 0);
+    int len = g_strv_length(lines);
 
-    gpointer* data = g_new0(gpointer, 2 + (id >= 0 ? 1 : 0));
-    data[0] = g_strdup(text);
-    data[1] = g_strdup(icon);
+    notification_push_data_t** data = calloc(len, sizeof(notification_push_data_t*));
+    *length = len;
 
-    if (id >= 0)
-        data[2] = GINT_TO_POINTER(id);
+    int i;
+    for ( i = 0; i < len; i++ ) {
+        notification_push_data_t* t = malloc(sizeof(notification_push_data_t));
+        data[i] = t;
 
+        t->id = id;
+        t->icon = g_strdup(icon);
+        t->text = g_strdup(lines[i]);
+    }
+
+    g_strfreev(lines);
     return data;
 }
 
 // aggiunge la notifica di testo al pannello
 static void push_text_notification(MokoPanel* panel, const char* text, const char* icon)
 {
-    gpointer* data = prepare_text_struct(text, icon, -1);
-    g_queue_push_tail(panel->queue, data);
+    int len, old_len, i;
+    EINA_LOG_DBG("pushing notification text: \"%s\"", text);
+    notification_push_data_t** data = prepare_text_struct(-1, text, icon, &len);
+
+    EINA_LOG_DBG("pushing %d lines of notifications", len);
+    old_len = panel->queue->length;
+    for (i=0; i < len; i++)
+        g_queue_push_tail(panel->queue, data[i]);
 
     // fai partire il processamento se e' la prima notifica
-    if (panel->queue->length == 1)
+    if (!old_len)
         process_notification_queue(panel);
 }
 
 // aggiunge la notifica alla coda dei ripresentati
 static void push_represent(MokoPanel* panel, int id, const char* text, const char* icon)
 {
-    gpointer* data = prepare_text_struct(text, icon, id);
+    // check previous notification
+    GList* iter = panel->represent->head;
+    while (iter) {
+        notification_push_data_t* data = iter->data;
+        if (data->id == id) {
+            g_free(data->text);
+            g_free(data->icon);
+
+            data->text = g_strdup(text);
+            data->icon = g_strdup(icon);
+            return;
+        }
+        iter = iter->next;
+    }
+
+    notification_push_data_t* data = calloc(1, sizeof(notification_push_data_t));
+    data->id = id;
+    data->text = g_strdup(text);
+    data->icon = g_strdup(icon);
+
     g_queue_push_tail(panel->represent, data);
 }
 
@@ -352,8 +393,8 @@ void mokopanel_notification_represent(MokoPanel* panel)
     // parti dal primo elemento (il piu' vecchio) e pushalo
     GList* iter = panel->represent->head;
     while (iter) {
-        gpointer* data = iter->data;
-        push_text_notification(panel, (const char *) data[0], (const char *) data[1]);
+        notification_push_data_t* data = iter->data;
+        push_text_notification(panel, data->text, data->icon);
         iter = iter->next;
     }
 }
@@ -397,10 +438,10 @@ void mokopanel_notification_remove(MokoPanel* panel, guint id)
         // rimozione dai represent
         GList* giter = panel->represent->head;
         while (giter) {
-            gpointer* gdata = giter->data;
-            if (GPOINTER_TO_INT(gdata[2]) == id) {
-                g_free(gdata[0]);
-                g_free(gdata[1]);
+            notification_push_data_t* gdata = giter->data;
+            if (gdata->id == id) {
+                g_free(gdata->text);
+                g_free(gdata->icon);
                 g_free(gdata);
 
                 g_queue_delete_link(panel->represent, giter);
@@ -530,8 +571,26 @@ no_icon:
         seq = id;
     }
 
-    data = g_new0(MokoNotification, 1);
-    data->panel = panel;
+    MokoNotification* no;
+    data = NULL;
+    EINA_LIST_FOREACH(panel->list, iter, no) {
+        if (no->id == id) {
+            data = no;
+            break;
+        }
+    }
+
+    if (!data) {
+        data = g_new0(MokoNotification, 1);
+        data->panel = panel;
+    }
+    else {
+        g_free(data->summary);
+        g_free(data->body);
+        g_free(data->category);
+        g_free(data->icon_path);
+    }
+
     data->id = seq;
     data->icon = ic;
     data->icon_path = icon_path;
@@ -565,6 +624,7 @@ no_icon:
     if (timeout < 0 || !data->actions)
         data->autodel = TRUE;
 
+    // new notification, insert
     if (!id) {
         g_hash_table_insert(panel->categories, g_strdup(data->category), eina_list_append(catg_list, data));
         panel->list = eina_list_append(panel->list, data);
@@ -579,12 +639,14 @@ no_icon:
             push_text_notification(panel, data->body, icon_path);
 
         // ripresenta notifica
-        if (data->show_on_resume) {
-            if (!id)
-                push_represent(panel, seq, data->body, icon_path);
-            else if (data->dont_push)
-                push_text_notification(panel, data->body, icon_path);
-        }
+        if (data->show_on_resume)
+            push_represent(panel, seq, data->body, icon_path);
+    }
+
+    // ongoing notification, activate display
+    if (data->ongoing) {
+        screensaver_off();
+        idle_hide();
     }
 
     EINA_LOG_DBG((!id) ?

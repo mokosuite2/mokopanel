@@ -128,8 +128,23 @@ static char* notification_genlist_label_get(void *data, Evas_Object * obj, const
         else if (!strcmp(part, "elm.text.sub")) {
 
             // single notification, no problems
-            if (c == 1)
-                return g_strdup(n->body);
+            if (c == 1) {
+                if (n->body != NULL) {
+                    // take the first line (if any)
+                    char* newline = strstr(n->body, "\n");
+                    if (newline != NULL) {
+                        int len = (newline - n->body);
+                        char* body = calloc(len + 1, sizeof(char));
+                        strncpy(body, n->body, len);
+                        return body;
+                    }
+
+                    // no newline, return whole body
+                    return g_strdup(n->body);
+                }
+
+                return g_strdup("");
+            }
 
             // multiple notifications, display nothing
             else
