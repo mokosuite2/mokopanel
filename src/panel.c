@@ -27,6 +27,7 @@
 
 #include "panel.h"
 #include "clock.h"
+#include "gps.h"
 #include "battery.h"
 #include "gsm.h"
 #include "notifications-win.h"
@@ -729,6 +730,10 @@ MokoPanel* mokopanel_new(const char* name, const char* title)
     evas_object_size_hint_align_set(panel->fill, EVAS_HINT_FILL, EVAS_HINT_FILL);
     evas_object_show(panel->fill);
     elm_box_pack_end(panel->hbox, panel->fill);
+
+    // gps
+    panel->gps = gps_applet_new(panel);
+    elm_box_pack_end(panel->hbox, panel->gps);
 
     // gsm
     panel->gsm = gsm_applet_new(panel);

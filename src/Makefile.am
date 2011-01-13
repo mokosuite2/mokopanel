@@ -35,6 +35,8 @@ mokopanel_SOURCES = $(dbus_sources) \
 	battery.h \
 	gsm.c \
 	gsm.h \
+	gps.c \
+	gps.h \
 	idle.c \
 	idle.h \
 	shutdown.c \

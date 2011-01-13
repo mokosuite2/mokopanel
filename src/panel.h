@@ -63,6 +63,9 @@ typedef struct {
     /* gsm */
     Evas_Object* gsm;
 
+    /* gps */
+    Evas_Object* gps;
+
     /* topmost object */
     Evas_Object* topmost;
 

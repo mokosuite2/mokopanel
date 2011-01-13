@@ -9,7 +9,8 @@ files_DATA = \
 	battery-60.png battery-80.png battery-100.png \
 	charging-10.png charging-20.png charging-40.png charging-60.png \
 	charging-80.png charging-100.png gsm-null.png gsm-offline.png \
-	gsm-0.png gsm-1.png gsm-2.png gsm-3.png gsm-4.png
+	gsm-0.png gsm-1.png gsm-2.png gsm-3.png gsm-4.png \
+	gps-off.png gps-on.png
 
 
 EXTRA_DIST = $(files_DATA)
