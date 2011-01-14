@@ -400,6 +400,11 @@ void mokopanel_notification_represent(MokoPanel* panel)
     }
 }
 
+void mokopanel_append_object(MokoPanel* panel, Evas_Object* obj)
+{
+    elm_box_pack_after(panel->hbox, obj, panel->fill);
+}
+
 /**
  * TODO
  */
@@ -731,21 +736,17 @@ MokoPanel* mokopanel_new(const char* name, const char* title)
     evas_object_show(panel->fill);
     elm_box_pack_end(panel->hbox, panel->fill);
 
-    // gps
-    panel->gps = gps_applet_new(panel);
-    elm_box_pack_end(panel->hbox, panel->gps);
-
-    // gsm
-    panel->gsm = gsm_applet_new(panel);
-    elm_box_pack_end(panel->hbox, panel->gsm);
+    // clock
+    panel->time = clock_applet_new(panel);
 
     // battery
     panel->battery = battery_applet_new(panel);
-    elm_box_pack_end(panel->hbox, panel->battery);
 
-    // clock
-    panel->time = clock_applet_new(panel);
-    elm_box_pack_end(panel->hbox, panel->time);
+    // gsm
+    panel->gsm = gsm_applet_new(panel);
+
+    // gps
+    panel->gps = gps_applet_new(panel);
 
     // mouse callback
     Evas_Object* ev = evas_object_rectangle_add(evas_object_evas_get(panel->win));

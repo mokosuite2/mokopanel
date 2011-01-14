@@ -179,5 +179,8 @@ Evas_Object* battery_applet_new(MokoPanel* panel)
 
     g_ptr_array_add(batteries, bat);
 
+    // add applet
+    mokopanel_append_object(panel, bat);
+
     return bat;
 }

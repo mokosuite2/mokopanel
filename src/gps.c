@@ -27,6 +27,11 @@
 #include "panel.h"
 #include "gps.h"
 
+typedef struct {
+    Evas_Object* object;
+    MokoPanel* panel;
+} applet_container;
+
 // lista applet gps
 static Eina_List* applets = NULL;
 
@@ -34,6 +39,25 @@ static bool gps_enabled = FALSE;
 static bool gps_fixed = FALSE;
 
 static Ecore_Timer* anim = NULL;
+
+static Evas_Object* create_icon(MokoPanel* panel, bool initial_status)
+{
+    Evas_Object* gps = elm_icon_add(panel->win);
+
+    elm_icon_file_set(gps, initial_status ? MOKOPANEL_DATADIR "/gps-on.png" : MOKOPANEL_DATADIR "/gps-off.png", NULL);
+    elm_icon_no_scale_set(gps, TRUE);
+    #ifdef QVGA
+    elm_icon_scale_set(gps, FALSE, TRUE);
+    #else
+    elm_icon_scale_set(gps, TRUE, TRUE);
+    #endif
+
+    evas_object_size_hint_min_set(gps, ICON_SIZE, ICON_SIZE);
+    evas_object_size_hint_align_set(gps, 0.5, 0.5);
+    evas_object_show(gps);
+
+    return gps;
+}
 
 static void set_icon(Evas_Object* gps, bool on)
 {
@@ -56,9 +80,9 @@ static Eina_Bool animate(void* data)
 
     static bool on_frame = TRUE;
     Eina_List* iter;
-    Evas_Object* icon;
-    EINA_LIST_FOREACH(applets, iter, icon)
-        set_icon(icon, on_frame);
+    applet_container* cont;
+    EINA_LIST_FOREACH(applets, iter, cont)
+        set_icon(cont->object, on_frame);
 
     on_frame = !on_frame;
     return TRUE;
@@ -78,15 +102,17 @@ static void fix_animation_stop(void)
     }
 }
 
-static void update_icon(Evas_Object* gps)
+static void update_icon(applet_container* gps)
 {
     if (gps_enabled) {
         EINA_LOG_DBG("GPS enabled");
-        evas_object_show(gps);
+        if (!gps->object)
+            gps->object = create_icon(gps->panel, FALSE);
+        mokopanel_append_object(gps->panel, gps->object);
 
         if (!gps_fixed) {
             EINA_LOG_DBG("GPS not fixed, starting animation");
-            set_icon(gps, FALSE);
+            set_icon(gps->object, FALSE);
 
             // start animation
             fix_animation_start();
@@ -97,14 +123,15 @@ static void update_icon(Evas_Object* gps)
             fix_animation_stop();
 
             // gps fixed!!
-            set_icon(gps, TRUE);
+            set_icon(gps->object, TRUE);
         }
     }
 
     else {
         EINA_LOG_DBG("GPS disabled");
         fix_animation_stop();
-        evas_object_hide(gps);
+        evas_object_del(gps->object);
+        gps->object = NULL;
     }
 }
 
@@ -113,7 +140,7 @@ static void fix_changed(gpointer userdata, gint status)
 {
     EINA_LOG_DBG("GPS fix status changed to %d", status);
     gps_fixed = (status >= 3);
-    update_icon((Evas_Object*) userdata);
+    update_icon((applet_container*) userdata);
 }
 
 /* ResourceChanged signal */
@@ -123,7 +150,7 @@ static void resource_changed(gpointer userdata, const char* name, gboolean statu
         gps_enabled = status;
         // fix status will be retrieved from signal -- for now force it FALSE
         gps_fixed = FALSE;
-        update_icon((Evas_Object*) userdata);
+        update_icon((applet_container*) userdata);
     }
 }
 
@@ -154,27 +181,16 @@ static gboolean gps_fso_connect(gpointer userdata)
 
 Evas_Object* gps_applet_new(MokoPanel* panel)
 {
-    Evas_Object* gps = elm_icon_add(panel->win);
-
-    elm_icon_file_set(gps, MOKOPANEL_DATADIR "/gps-off.png", NULL);
-    elm_icon_no_scale_set(gps, TRUE);
-    #ifdef QVGA
-    elm_icon_scale_set(gps, FALSE, TRUE);
-    #else
-    elm_icon_scale_set(gps, TRUE, TRUE);
-    #endif
-
-    evas_object_size_hint_min_set(gps, ICON_SIZE, ICON_SIZE);
-    evas_object_size_hint_align_set(gps, 0.5, 0.5);
-    //evas_object_show(gps);
+    applet_container* cont = calloc(1, sizeof(applet_container));
+    cont->panel = panel;
 
     // connetti segnali FSO
-    ousaged_usage_resource_changed_connect(resource_changed, gps);
-    gypsy_device_fix_status_changed_connect(fix_changed, gps);
+    ousaged_usage_resource_changed_connect(resource_changed, cont);
+    gypsy_device_fix_status_changed_connect(fix_changed, cont);
 
     // richiesta dati iniziale
-    g_idle_add(gps_fso_connect, gps);
+    g_idle_add(gps_fso_connect, cont);
 
-    applets = eina_list_append(applets, gps);
-    return gps;
+    applets = eina_list_append(applets, cont);
+    return cont->object;
 }

@@ -59,5 +59,8 @@ Evas_Object* clock_applet_new(MokoPanel* panel)
     // timer refresh orario
     g_timeout_add_seconds(1, update_clock, panel);
 
+    // add applet
+    mokopanel_append_object(panel, time);
+
     return time;
 }

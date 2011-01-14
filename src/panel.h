@@ -178,6 +178,8 @@ typedef struct {
 
 typedef void (*MokoPanelCallback)(MokoPanel* panel, int event, gpointer data);
 
+void mokopanel_append_object(MokoPanel* panel, Evas_Object* obj);
+
 void mokopanel_fire_event(MokoPanel* panel, int event, gpointer data);
 void mokopanel_event(MokoPanel* panel, int event, gpointer data);
 

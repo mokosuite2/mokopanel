@@ -385,5 +385,8 @@ Evas_Object* gsm_applet_new(MokoPanel* panel)
     // richiesta dati iniziale
     g_idle_add(gsm_fso_connect, gsm);
 
+    // add applet
+    mokopanel_append_object(panel, gsm);
+
     return gsm;
 }
