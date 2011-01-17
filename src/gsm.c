@@ -355,12 +355,8 @@ void gsm_applet_set_icon(Evas_Object* gsm, GsmIcon icon)
         g_free(ic);
 
         // maledetto!!!
-        elm_icon_no_scale_set(gsm, TRUE);
-        #ifdef QVGA
-        elm_icon_scale_set(gsm, FALSE, TRUE);
-        #else
+        elm_icon_smooth_set(gsm, TRUE);
         elm_icon_scale_set(gsm, TRUE, TRUE);
-        #endif
         evas_object_size_hint_align_set(gsm, 0.5, 0.5);
         evas_object_size_hint_min_set(gsm, ICON_SIZE, ICON_SIZE);
     }
@@ -371,12 +367,8 @@ Evas_Object* gsm_applet_new(MokoPanel* panel)
     Evas_Object* gsm = elm_icon_add(panel->win);
 
     elm_icon_file_set(gsm, MOKOPANEL_DATADIR "/gsm-null.png", NULL);
-    elm_icon_no_scale_set(gsm, TRUE);
-    #ifdef QVGA
-    elm_icon_scale_set(gsm, FALSE, TRUE);
-    #else
+    elm_icon_smooth_set(gsm, TRUE);
     elm_icon_scale_set(gsm, TRUE, TRUE);
-    #endif
 
     evas_object_size_hint_align_set(gsm, 0.5, 0.5);
     evas_object_size_hint_min_set(gsm, ICON_SIZE, ICON_SIZE);

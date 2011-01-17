@@ -45,12 +45,8 @@ static Evas_Object* create_icon(MokoPanel* panel, bool initial_status)
     Evas_Object* gps = elm_icon_add(panel->win);
 
     elm_icon_file_set(gps, initial_status ? MOKOPANEL_DATADIR "/gps-on.png" : MOKOPANEL_DATADIR "/gps-off.png", NULL);
-    elm_icon_no_scale_set(gps, TRUE);
-    #ifdef QVGA
-    elm_icon_scale_set(gps, FALSE, TRUE);
-    #else
+    elm_icon_smooth_set(gps, TRUE);
     elm_icon_scale_set(gps, TRUE, TRUE);
-    #endif
 
     evas_object_size_hint_min_set(gps, ICON_SIZE, ICON_SIZE);
     evas_object_size_hint_align_set(gps, 0.5, 0.5);
@@ -62,12 +58,8 @@ static Evas_Object* create_icon(MokoPanel* panel, bool initial_status)
 static void set_icon(Evas_Object* gps, bool on)
 {
     elm_icon_file_set(gps, on ? MOKOPANEL_DATADIR "/gps-on.png" : MOKOPANEL_DATADIR "/gps-off.png", NULL);
-    elm_icon_no_scale_set(gps, TRUE);
-    #ifdef QVGA
-    elm_icon_scale_set(gps, FALSE, TRUE);
-    #else
+    elm_icon_smooth_set(gps, TRUE);
     elm_icon_scale_set(gps, TRUE, TRUE);
-    #endif
 
     evas_object_size_hint_min_set(gps, ICON_SIZE, ICON_SIZE);
     evas_object_size_hint_align_set(gps, 0.5, 0.5);

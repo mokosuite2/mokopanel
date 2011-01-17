@@ -179,12 +179,8 @@ static void process_notification_queue(gpointer data)
 
     Evas_Object *ic = elm_icon_add(panel->win);
     elm_icon_file_set(ic, (const char*) in_data->icon, NULL);
-    elm_icon_no_scale_set(ic, TRUE);
-    #ifdef QVGA
-    elm_icon_scale_set(ic, FALSE, TRUE);
-    #else
+    elm_icon_smooth_set(ic, TRUE);
     elm_icon_scale_set(ic, TRUE, TRUE);
-    #endif
 
     evas_object_size_hint_min_set(ic, ICON_SIZE, ICON_SIZE);
     evas_object_size_hint_align_set(ic, 0.5, 0.5);
@@ -304,9 +300,8 @@ void mokopanel_event(MokoPanel* panel, int event, gpointer data)
             struct tm* timestamp_tm = localtime((const time_t*)&now);
             char strf[50+1] = {0, };
             strftime(strf, 50, "%Y-%m-%d", timestamp_tm);
-            char* datestr = g_strdup_printf(" <b>%s</b>", strf);
-            elm_label_label_set(panel->date, datestr);
-            g_free(datestr);
+            elm_object_style_set(panel->date, "panel");
+            elm_label_label_set(panel->date, strf);
 
             if (elm_pager_content_top_get(panel->pager) == panel->hbox) {
                 panel->date_pushed = TRUE;
@@ -555,12 +550,9 @@ guint mokopanel_notification_queue(MokoPanel* panel,
 
     ic = elm_icon_add(panel->win);
     elm_icon_file_set(ic, icon_path, NULL);
-    elm_icon_no_scale_set(ic, TRUE);
-    #ifdef QVGA
-    elm_icon_scale_set(ic, FALSE, TRUE);
-    #else
+    elm_icon_smooth_set(ic, TRUE);
     elm_icon_scale_set(ic, TRUE, TRUE);
-    #endif
+
     evas_object_size_hint_align_set(ic, 0.5, 0.5);
     evas_object_size_hint_min_set(ic, ICON_SIZE, ICON_SIZE);
     evas_object_show(ic);

@@ -71,12 +71,8 @@ static void get_capacity_callback(GError *error, int energy, gpointer data)
         ic = g_strdup_printf(MOKOPANEL_DATADIR "/%s-%d.png", (battery_charging) ? "charging" : "battery", perc);
 
     elm_icon_file_set(bat, ic, NULL);
-    elm_icon_no_scale_set(bat, TRUE);
-    #ifdef QVGA
-    elm_icon_scale_set(bat, FALSE, TRUE);
-    #else
+    elm_icon_smooth_set(bat, TRUE);
     elm_icon_scale_set(bat, TRUE, TRUE);
-    #endif
 
     evas_object_size_hint_min_set(bat, ICON_SIZE, ICON_SIZE);
     evas_object_size_hint_align_set(bat, 0.5, 0.5);
@@ -159,12 +155,8 @@ Evas_Object* battery_applet_new(MokoPanel* panel)
     Evas_Object* bat = elm_icon_add(panel->win);
 
     elm_icon_file_set(bat, MOKOPANEL_DATADIR "/battery-unknown.png", NULL);
-    elm_icon_no_scale_set(bat, TRUE);
-    #ifdef QVGA
-    elm_icon_scale_set(bat, FALSE, TRUE);
-    #else
+    elm_icon_smooth_set(bat, TRUE);
     elm_icon_scale_set(bat, TRUE, TRUE);
-    #endif
 
     evas_object_size_hint_min_set(bat, ICON_SIZE, ICON_SIZE);
     evas_object_size_hint_align_set(bat, 0.5, 0.5);
