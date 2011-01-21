@@ -168,8 +168,8 @@ typedef struct {
 
 } MokoNotification;
 
-#define PANEL_HEIGHT        (SCALE_FACTOR * 20)
-#define PANEL_WIDTH         (SCALE_FACTOR * 240)
+//#define PANEL_HEIGHT        18
+//#define PANEL_WIDTH         (SCALE_FACTOR * 240)
 #define ICON_SIZE           (SCALE_FACTOR * 20)
 
 #define MOKOPANEL_CALLBACK_NOTIFICATION_START       1

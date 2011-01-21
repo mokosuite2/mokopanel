@@ -1,5 +1,5 @@
-#define SCALE_FACTOR    1.0
-#define PANEL_WIDTH     (18*SCALE_FACTOR)
+#define SCALE_FACTOR    2.0
+#define PANEL_WIDTH     18
 #define COLOR_WHITE 255 255 255 255;
 #define COLOR_DARK_GRAY 79 79 79 255;
 
@@ -242,7 +242,7 @@ collections {
                     color2: 255 255 255 255;
                     text {
                         font:     "DroidSans:style=Bold";
-                        size:     (12*SCALE_FACTOR);
+                        size:     12;
                         min:      1 1;
                         align:    0.0 0.5;
                         elipsis:  0.0;

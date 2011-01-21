@@ -44,7 +44,6 @@ extern int _log_dom;
 #define MOKOPANEL_SYSCONFDIR    SYSCONFDIR "/mokosuite"
 #define MOKOPANEL_DATADIR       DATADIR "/mokosuite/panel"
 #define SCALE_FACTOR            2.0
-#define QVGA                    1
 
 
 #endif  /* __GLOBALS_H */

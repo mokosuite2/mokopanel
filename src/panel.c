@@ -752,8 +752,8 @@ MokoPanel* mokopanel_new(const char* name, const char* title)
 
     ecore_x_event_mask_set(xwin, ECORE_X_EVENT_MASK_WINDOW_VISIBILITY);
 
-    evas_object_size_hint_min_set(panel->layout, PANEL_WIDTH, PANEL_HEIGHT);
-    evas_object_resize(panel->win, PANEL_WIDTH, PANEL_HEIGHT);
+    //evas_object_size_hint_min_set(panel->layout, PANEL_WIDTH, PANEL_HEIGHT);
+    //evas_object_resize(panel->win, PANEL_WIDTH, PANEL_HEIGHT);
 
     evas_object_show(panel->win);
 
