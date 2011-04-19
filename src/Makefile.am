@@ -6,8 +6,19 @@ VALAC_ARGS = \
 	--save-temps \
 	--basedir $(top_srcdir)/src
 
-INCLUDES = $(GLIB_CFLAGS) $(DBUS_CFLAGS) $(ELEMENTARY_CFLAGS) $(EFREET_CFLAGS) $(FSO_CFLAGS) $(MOKOSUITE_CFLAGS) \
-	-DLOCALEDIR=\""$(localedir)"\" -DDATADIR=\""$(datadir)"\" -DSYSCONFDIR=\""$(sysconfdir)"\" -Wall
+INCLUDES = $(GLIB_CFLAGS) \
+	$(DBUS_CFLAGS) \
+	$(ELEMENTARY_CFLAGS) \
+	$(EFREET_CFLAGS) \
+	$(ECORE_CFLAGS) \
+	$(EVAS_CFLAGS) \
+	$(EDJE_CFLAGS) \
+	$(FSO_CFLAGS) \
+	$(MOKOSUITE_CFLAGS) \
+	-DLOCALEDIR=\""$(localedir)"\" \
+	-DDATADIR=\""$(datadir)"\" \
+	-DSYSCONFDIR=\""$(sysconfdir)"\" \
+	-Wall
 
 bin_PROGRAMS = mokopanel
 
@@ -43,7 +54,15 @@ mokopanel_SOURCES = $(dbus_sources) \
 	shutdown.h
 
 mokopanel_LDADD = \
-	$(FSO_LIBS) $(ELEMENTARY_LIBS) $(EFREET_LIBS) $(DBUS_LIBS) $(GLIB_LIBS) $(MOKOSUITE_LIBS)
+	$(FSO_LIBS) \
+	$(ELEMENTARY_LIBS) \
+	$(EFREET_LIBS) \
+	$(ECORE_LIBS) \
+	$(EVAS_LIBS) \
+	$(EDJE_LIBS) \
+	$(DBUS_LIBS) \
+	$(GLIB_LIBS) \
+	$(MOKOSUITE_LIBS)
 
 EXTRA_DIST = \
 	$(BUILT_SOURCES) \
