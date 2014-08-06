@@ -1,5 +1,5 @@
 DESCRIPTION = "Desktop environment and phone stack GUI for SHR - dock panel and idle screen"
-HOMEPAGE = "http://gitorious.org/mokosuite2"
+HOMEPAGE = "https://gitorious.org/mokosuite2"
 AUTHOR = "Daniele Ricci"
 LICENSE = "GPLv3"
 DEPENDS = "libmokosuite libfreesmartphone-glib glib-2.0 dbus-glib elementary vala-native edje-native"
